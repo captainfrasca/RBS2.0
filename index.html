@@ -1,906 +1,422 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RBS 2.0 - ROV Training Module</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0f1419;
-            color: #fff;
-            overflow: hidden;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #1a1f2e 0%, #2d3748 100%);
-            padding: 8px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #E30613;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .system-title {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #fff;
-        }
-
-        .header-stats {
-            display: flex;
-            gap: 15px;
-        }
-
-        .stat-badge {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.85em;
-        }
-
-        .stat-badge.critical { background: #e53e3e; }
-        .stat-badge.warning { background: #dd6b20; }
-        .stat-badge.ok { background: #38a169; }
-
-        .training-indicator {
-            background: #f6ad55;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            animation: pulseTraining 2s infinite;
-        }
-
-        @keyframes pulseTraining {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-
-        .main-container {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 200px 1fr 380px;
-            gap: 8px;
-            padding: 8px;
-            overflow: hidden;
-        }
-
-        .sidebar {
-            background: #1a202c;
-            border-radius: 8px;
-            padding: 10px;
-            overflow-y: auto;
-        }
-
-        .menu-item {
-            padding: 10px 12px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #a0aec0;
-            font-size: 0.85em;
-            margin-bottom: 5px;
-        }
-
-        .menu-item:hover {
-            background: rgba(227,6,19,0.2);
-            color: #fff;
-        }
-
-        .menu-item.active {
-            background: #E30613;
-            color: #fff;
-        }
-
-        .center-content {
-            background: #1a202c;
-            border-radius: 8px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .workspace-tabs {
-            display: flex;
-            background: #2d3748;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .workspace-tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.9em;
-            border-right: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .workspace-tab:hover {
-            background: rgba(227,6,19,0.2);
-        }
-
-        .workspace-tab.active {
-            background: #E30613;
-            font-weight: bold;
-        }
-
-        .workspace-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
-
-        #mapContainer {
-            width: 100%;
-            height: 100%;
-            border-radius: 8px;
-            position: relative;
-        }
-
-        .map-overlay-info {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.8);
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: 1px solid #E30613;
-            z-index: 1000;
-            font-size: 0.85em;
-        }
-
-        .conversation-view {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .conversation-header {
-            background: #2d3748;
-            padding: 15px;
-            border-radius: 8px 8px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .caller-info {
-            font-size: 1.1em;
-            font-weight: bold;
-            color: #E30613;
-        }
-
-        .call-timer {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #48bb78;
-        }
-
-        .conversation-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            background: #0f1419;
-        }
-
-        .message {
-            background: rgba(255,255,255,0.05);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border-left: 3px solid #3182ce;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .message.from-caller {
-            border-left-color: #f6ad55;
-        }
-
-        .message.from-rov {
-            border-left-color: #48bb78;
-            background: rgba(72,187,120,0.1);
-        }
-
-        .message-sender {
-            font-weight: bold;
-            margin-bottom: 5px;
-            font-size: 0.9em;
-            color: #a0aec0;
-        }
-
-        .response-options {
-            background: #1a202c;
-            padding: 20px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .response-btn {
-            width: 100%;
-            background: rgba(255,255,255,0.05);
-            border: 2px solid rgba(255,255,255,0.2);
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            text-align: left;
-            transition: all 0.3s;
-            font-size: 0.95em;
-            margin-bottom: 10px;
-        }
-
-        .response-btn:hover {
-            background: rgba(227,6,19,0.2);
-            border-color: #E30613;
-            transform: translateX(5px);
-        }
-
-        .response-btn.correct {
-            background: rgba(72,187,120,0.2);
-            border-color: #48bb78;
-        }
-
-        .response-btn.incorrect {
-            background: rgba(229,62,62,0.2);
-            border-color: #e53e3e;
-        }
-
-        .response-btn:disabled {
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-
-        .right-panel {
-            background: #1a202c;
-            border-radius: 8px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .queue-header {
-            background: #2d3748;
-            padding: 12px 15px;
-            border-bottom: 2px solid #E30613;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .queue-title {
-            font-weight: bold;
-            font-size: 1em;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .queue-count {
-            background: #E30613;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 0.85em;
-        }
-
-        .queue-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-        }
-
-        .incident-card {
-            background: rgba(255,255,255,0.05);
-            border-left: 4px solid;
-            padding: 12px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.3s;
-            position: relative;
-        }
-
-        .incident-card:hover {
-            background: rgba(255,255,255,0.08);
-            transform: translateX(3px);
-        }
-
-        .incident-card.priority-1 {
-            border-left-color: #e53e3e;
-            animation: urgentPulse 1.5s infinite;
-        }
-
-        .incident-card.priority-2 {
-            border-left-color: #f6ad55;
-        }
-
-        .incident-card.priority-3 {
-            border-left-color: #3182ce;
-        }
-
-        @keyframes urgentPulse {
-            0%, 100% { 
-                opacity: 1;
-                box-shadow: 0 0 0 0 rgba(229, 62, 62, 0);
-            }
-            50% { 
-                opacity: 0.8;
-                box-shadow: 0 0 10px 2px rgba(229, 62, 62, 0.3);
-            }
-        }
-
-        .incident-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-
-        .incident-type {
-            background: rgba(227,6,19,0.8);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.75em;
-            font-weight: bold;
-        }
-
-        .incident-time {
-            font-size: 0.75em;
-            color: #718096;
-        }
-
-        .incident-title {
-            font-weight: bold;
-            margin-bottom: 3px;
-            font-size: 0.9em;
-        }
-
-        .incident-location {
-            font-size: 0.8em;
-            color: #a0aec0;
-        }
-
-        .accept-btn {
-            margin-top: 8px;
-            padding: 6px 12px;
-            background: #48bb78;
-            border: none;
-            border-radius: 4px;
-            color: white;
-            font-size: 0.85em;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            transition: all 0.3s;
-        }
-
-        .accept-btn:hover {
-            background: #38a169;
-        }
-
-        .feedback {
-            background: rgba(72,187,120,0.1);
-            border: 1px solid #48bb78;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        .feedback.negative {
-            background: rgba(229,62,62,0.1);
-            border-color: #e53e3e;
-        }
-
-        .waiting-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            text-align: center;
-            color: #718096;
-        }
-
-        .start-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            text-align: center;
-            padding: 40px;
-        }
-
-        .start-title {
-            font-size: 2.5em;
-            font-weight: bold;
-            color: #E30613;
-            margin-bottom: 20px;
-        }
-
-        .start-description {
-            font-size: 1.1em;
-            line-height: 1.8;
-            max-width: 600px;
-            margin-bottom: 30px;
-            color: #a0aec0;
-        }
-
-        .start-btn {
-            padding: 15px 40px;
-            background: #E30613;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-size: 1.2em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .start-btn:hover {
-            background: #cc0510;
-            transform: scale(1.05);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RBS 2.0 - ROV Training Module</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f1419; color: #fff; overflow: hidden; height: 100vh;
+      display: flex; flex-direction: column;
+    }
+    .header { background: linear-gradient(135deg, #1a1f2e 0%, #2d3748 100%);
+      padding: 8px 20px; display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 2px solid #E30613; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    .system-title { font-size: 1.2em; font-weight: bold; color: #fff; }
+    .header-stats { display: flex; gap: 15px; }
+    .stat-badge { display: flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.85em; }
+    .stat-badge.critical { background: #e53e3e; }
+    .stat-badge.warning { background: #dd6b20; }
+    .stat-badge.ok { background: #38a169; }
+    .training-indicator { background: #f6ad55; padding: 6px 16px; border-radius: 20px; font-weight: bold; animation: pulseTraining 2s infinite; }
+    @keyframes pulseTraining { 0%,100% {opacity: 1;} 50% {opacity: .6;} }
+
+    .main-container { flex: 1; display: grid; grid-template-columns: 200px 1fr 380px; gap: 8px; padding: 8px; overflow: hidden; }
+    .sidebar { background: #1a202c; border-radius: 8px; padding: 10px; overflow-y: auto; }
+    .menu-item { padding: 10px 12px; background: rgba(255,255,255,.05); border-radius: 6px; cursor: pointer; transition: .3s; display: flex; align-items: center; gap: 8px; color: #a0aec0; font-size: .85em; margin-bottom: 5px; }
+    .menu-item:hover { background: rgba(227,6,19,.2); color: #fff; }
+    .menu-item.active { background: #E30613; color: #fff; }
+
+    .center-content { background: #1a202c; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
+    .workspace-tabs { display: flex; background: #2d3748; border-bottom: 1px solid rgba(255,255,255,.1); }
+    .workspace-tab { padding: 10px 20px; cursor: pointer; transition: .3s; font-size: .9em; border-right: 1px solid rgba(255,255,255,.1); }
+    .workspace-tab:hover { background: rgba(227,6,19,.2); }
+    .workspace-tab.active { background: #E30613; font-weight: bold; }
+    .workspace-content { flex: 1; overflow: hidden; position: relative; }
+
+    /* Map area */
+    #mapWrapper { position: relative; height: 100%; width: 100%; }
+    #mapContainer { position: absolute; inset: 0; }
+    .map-overlay-info { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,.8); padding: 10px 15px; border-radius: 8px; border: 1px solid #E30613; z-index: 1000; font-size: .85em; }
+
+    .conversation-view { height: 100%; display: flex; flex-direction: column; }
+    .conversation-header { background: #2d3748; padding: 15px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; }
+    .caller-info { font-size: 1.1em; font-weight: bold; color: #E30613; }
+    .call-timer { font-size: 1.2em; font-weight: bold; color: #48bb78; }
+    .conversation-messages { flex: 1; overflow-y: auto; padding: 20px; background: #0f1419; }
+    .message { background: rgba(255,255,255,.05); padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 3px solid #3182ce; animation: slideIn .3s ease-out; }
+    @keyframes slideIn { from {opacity: 0; transform: translateX(-20px);} to {opacity: 1; transform: translateX(0);} }
+    .message.from-caller { border-left-color: #f6ad55; }
+    .message.from-rov { border-left-color: #48bb78; background: rgba(72,187,120,.1); }
+    .message-sender { font-weight: bold; margin-bottom: 5px; font-size: .9em; color: #a0aec0; }
+    .response-options { background: #1a202c; padding: 20px; border-top: 1px solid rgba(255,255,255,.1); }
+    .response-btn { width: 100%; background: rgba(255,255,255,.05); border: 2px solid rgba(255,255,255,.2); color: white; padding: 15px; border-radius: 8px; cursor: pointer; text-align: left; transition: .3s; font-size: .95em; margin-bottom: 10px; }
+    .response-btn:hover { background: rgba(227,6,19,.2); border-color: #E30613; transform: translateX(5px); }
+    .response-btn.correct { background: rgba(72,187,120,.2); border-color: #48bb78; }
+    .response-btn.incorrect { background: rgba(229,62,62,.2); border-color: #e53e3e; }
+    .response-btn:disabled { cursor: not-allowed; opacity: .7; }
+
+    .right-panel { background: #1a202c; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
+    .queue-header { background: #2d3748; padding: 12px 15px; border-bottom: 2px solid #E30613; display: flex; justify-content: space-between; align-items: center; }
+    .queue-title { font-weight: bold; font-size: 1em; display: flex; align-items: center; gap: 8px; }
+    .queue-count { background: #E30613; padding: 2px 8px; border-radius: 10px; font-size: .85em; }
+    .queue-list { flex: 1; overflow-y: auto; padding: 10px; }
+    .incident-card { background: rgba(255,255,255,.05); border-left: 4px solid; padding: 12px; margin-bottom: 10px; border-radius: 4px; cursor: pointer; transition: .3s; position: relative; }
+    .incident-card:hover { background: rgba(255,255,255,.08); transform: translateX(3px); }
+    .incident-card.priority-1 { border-left-color: #e53e3e; animation: urgentPulse 1.5s infinite; }
+    .incident-card.priority-2 { border-left-color: #f6ad55; }
+    .incident-card.priority-3 { border-left-color: #3182ce; }
+    @keyframes urgentPulse { 0%,100% {opacity: 1; box-shadow: 0 0 0 0 rgba(229,62,62,0);} 50% {opacity: .8; box-shadow: 0 0 10px 2px rgba(229,62,62,.3);} }
+    .incident-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+    .incident-type { background: rgba(227,6,19,.8); padding: 2px 6px; border-radius: 4px; font-size: .75em; font-weight: bold; }
+    .incident-time { font-size: .75em; color: #718096; }
+    .incident-title { font-weight: bold; margin-bottom: 3px; font-size: .9em; }
+    .incident-location { font-size: .8em; color: #a0aec0; }
+    .accept-btn { margin-top: 8px; padding: 6px 12px; background: #48bb78; border: none; border-radius: 4px; color: white; font-size: .85em; font-weight: bold; cursor: pointer; width: 100%; transition: .3s; }
+    .accept-btn:hover { background: #38a169; }
+    .feedback { background: rgba(72,187,120,.1); border: 1px solid #48bb78; padding: 15px; border-radius: 8px; margin-top: 15px; animation: slideIn .3s ease-out; }
+    .feedback.negative { background: rgba(229,62,62,.1); border-color: #e53e3e; }
+    .waiting-screen { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #718096; }
+    .start-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px; }
+    .start-title { font-size: 2.5em; font-weight: bold; color: #E30613; margin-bottom: 20px; }
+    .start-description { font-size: 1.1em; line-height: 1.8; max-width: 600px; margin-bottom: 30px; color: #a0aec0; }
+    .start-btn { padding: 15px 40px; background: #E30613; border: none; border-radius: 8px; color: white; font-size: 1.2em; font-weight: bold; cursor: pointer; transition: .3s; }
+    .start-btn:hover { background: #cc0510; transform: scale(1.05); }
+  </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo">
-            <div class="system-title">🚌 RBS 2.0 - TRANSDEV COMMAND CENTER</div>
-            <div class="training-indicator">TRAINING MODE</div>
-        </div>
-        
-        <div class="header-stats">
-            <div class="stat-badge ok">
-                <span>✓</span>
-                <span id="activeCount">847</span>
-                <span>Actief</span>
-            </div>
-            <div class="stat-badge warning">
-                <span>⚠️</span>
-                <span id="warningCount">23</span>
-                <span>Vertraagd</span>
-            </div>
-            <div class="stat-badge critical">
-                <span>🔴</span>
-                <span id="criticalCount">5</span>
-                <span>Storing</span>
-            </div>
-        </div>
-        
-        <div style="font-size: 0.85em; color: #a0aec0;">
-            <div style="font-weight: bold;">Shift: <span id="shiftTime">00:00</span></div>
-            <div>Score: <span id="score" style="color: #48bb78; font-weight: bold;">0</span></div>
-        </div>
+  <div class="header">
+    <div class="logo">
+      <div class="system-title">🚌 RBS 2.0 - TRANSDEV COMMAND CENTER</div>
+      <div class="training-indicator">TRAINING MODE</div>
+    </div>
+    <div class="header-stats">
+      <div class="stat-badge ok"><span>✓</span><span id="activeCount">847</span><span>Actief</span></div>
+      <div class="stat-badge warning"><span>⚠️</span><span id="warningCount">23</span><span>Vertraagd</span></div>
+      <div class="stat-badge critical"><span>🔴</span><span id="criticalCount">5</span><span>Storing</span></div>
+    </div>
+    <div style="font-size: .85em; color: #a0aec0;">
+      <div style="font-weight: bold;">Shift: <span id="shiftTime">00:00</span></div>
+      <div>Score: <span id="score" style="color: #48bb78; font-weight: bold;">0</span></div>
+    </div>
+  </div>
+
+  <div class="main-container">
+    <div class="sidebar">
+      <div class="menu-item active" onclick="setActiveMenu(this, 'rov')"><span>📞</span><span>ROV Training</span></div>
+      <div class="menu-item" onclick="setActiveMenu(this, 'dashboard')"><span>📊</span><span>Dashboard</span></div>
+      <div class="menu-item" onclick="setActiveMenu(this, 'vehicles')"><span>🚌</span><span>Voertuigen</span></div>
+      <div class="menu-item" onclick="setActiveMenu(this, 'traffic')"><span>🚦</span><span>Live Verkeer</span></div>
+      <div class="menu-item" onclick="setActiveMenu(this, 'routes')"><span>📍</span><span>Routes</span></div>
+      <div class="menu-item" onclick="setActiveMenu(this, 'incidents')"><span>🚨</span><span>Incidenten</span></div>
+      <div class="menu-item" onclick="setActiveMenu(this, 'drivers')"><span>👥</span><span>Chauffeurs</span></div>
+      <div class="menu-item" onclick="setActiveMenu(this, 'reports')"><span>📊</span><span>Rapportages</span></div>
     </div>
 
-    <div class="main-container">
-        <div class="sidebar">
-            <div class="menu-item active" onclick="setActiveMenu(this, 'rov')">
-                <span>📞</span>
-                <span>ROV Training</span>
-            </div>
-            <div class="menu-item" onclick="setActiveMenu(this, 'dashboard')">
-                <span>📊</span>
-                <span>Dashboard</span>
-            </div>
-            <div class="menu-item" onclick="setActiveMenu(this, 'vehicles')">
-                <span>🚌</span>
-                <span>Voertuigen</span>
-            </div>
-            <div class="menu-item" onclick="setActiveMenu(this, 'traffic')">
-                <span>🚦</span>
-                <span>Live Verkeer</span>
-            </div>
-            <div class="menu-item" onclick="setActiveMenu(this, 'routes')">
-                <span>📍</span>
-                <span>Routes</span>
-            </div>
-            <div class="menu-item" onclick="setActiveMenu(this, 'incidents')">
-                <span>🚨</span>
-                <span>Incidenten</span>
-            </div>
-            <div class="menu-item" onclick="setActiveMenu(this, 'drivers')">
-                <span>👥</span>
-                <span>Chauffeurs</span>
-            </div>
-            <div class="menu-item" onclick="setActiveMenu(this, 'reports')">
-                <span>📊</span>
-                <span>Rapportages</span>
-            </div>
-        </div>
-
-        <div class="center-content">
-            <div class="workspace-tabs">
-                <div class="workspace-tab active" onclick="switchTab(this, 'conversation')">
-                    <span>📞 Gesprek</span>
-                </div>
-                <div class="workspace-tab" onclick="switchTab(this, 'map')">
-                    <span>🗺️ Kaart</span>
-                </div>
-                <div class="workspace-tab" onclick="switchTab(this, 'resources')">
-                    <span>📋 Resources</span>
-                </div>
-            </div>
-            <div class="workspace-content" id="workspaceContent"></div>
-        </div>
-
-        <div class="right-panel">
-            <div class="queue-header">
-                <div class="queue-title">
-                    <span>🚨</span>
-                    <span>Wachtrij</span>
-                    <span class="queue-count" id="queueCount">0</span>
-                </div>
-            </div>
-            <div class="queue-list" id="queueList"></div>
-        </div>
+    <div class="center-content">
+      <div class="workspace-tabs">
+        <div class="workspace-tab active" onclick="switchTab(this, 'conversation')"><span>📞 Gesprek</span></div>
+        <div class="workspace-tab" onclick="switchTab(this, 'map')"><span>🗺️ Kaart</span></div>
+        <div class="workspace-tab" onclick="switchTab(this, 'resources')"><span>📋 Resources</span></div>
+      </div>
+      <div class="workspace-content" id="workspaceContent"></div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        // Incident definitions
-        const INCIDENTS = {
-            noodoproep1: {
-                type: 'NOOD',
-                priority: 1,
-                caller: 'Chauffeur Ahmed (Lijn 300)',
-                title: 'Medische noodsituatie',
-                location: 'Haarlemmerplein, Amsterdam',
-                coords: [52.3862, 4.8769],
-                conversation: [
-                    { sender: 'Chauffeur', text: 'ROV! Passagier ligt op de grond en reageert niet! Help!' }
-                ],
-                responses: [
-                    { 
-                        text: 'Ahmed, bel direct zelf 112! Ik schakel Service & Veiligheid in, stuur MER en regel ritverval voor lijn 300.',
-                        correct: true,
-                        feedback: 'Perfect! Juiste procedure gevolgd.',
-                        points: 150
-                    },
-                    { 
-                        text: 'Rij snel naar het ziekenhuis.',
-                        correct: false,
-                        feedback: 'Gevaarlijk! Altijd 112 bellen en ter plaatse blijven.',
-                        points: -100
-                    },
-                    { 
-                        text: 'Check of er een AED in de buurt is.',
-                        correct: false,
-                        feedback: 'Verkeerde prioriteit. Eerst 112!',
-                        points: 20
-                    }
-                ].sort(() => Math.random() - 0.5)
-            },
-            voertuigdefect1: {
-                type: 'VD',
-                priority: 2,
-                caller: 'Chauffeur Sarah (Lijn 300)',
-                title: 'Motor Storing',
-                location: 'Haarlemmermeerweg',
-                coords: [52.3648, 4.8285],
-                conversation: [
-                    { sender: 'Chauffeur', text: 'ROV, motorstoring! Bus start niet meer. 22 passagiers aan boord.' }
-                ],
-                responses: [
-                    { 
-                        text: 'Sarah, MER onderweg met vervangbus. Monteur gealarmeerd. Ritverval actief. Waarschuwingslichten aan?',
-                        correct: true,
-                        feedback: 'Uitstekend! Alle procedures gevolgd.',
-                        points: 100
-                    },
-                    { 
-                        text: 'Probeer de bus nog een keer te starten.',
-                        correct: false,
-                        feedback: 'Tijdverlies! Direct vervangbus regelen.',
-                        points: 20
-                    },
-                    { 
-                        text: 'Laat passagiers uitstappen, monteur komt.',
-                        correct: false,
-                        feedback: 'Onvolledig! Vervangbus vergeten.',
-                        points: 30
-                    }
-                ].sort(() => Math.random() - 0.5)
-            },
-            busvol1: {
-                type: 'VV',
-                priority: 3,
-                caller: 'Chauffeur Kevin (Lijn 397)',
-                title: 'Bus vol - Schiphol',
-                location: 'Schiphol Plaza',
-                coords: [52.3105, 4.7683],
-                conversation: [
-                    { sender: 'Chauffeur', text: 'Bus stampvol, 20 mensen moeten achterblijven. Wat nu?' }
-                ],
-                responses: [
-                    { 
-                        text: 'Check wanneer volgende 397 komt. Overweeg extra bus. Informeer passagiers over wachttijd.',
-                        correct: true,
-                        feedback: 'Goed! Juiste aanpak voor capaciteitsprobleem.',
-                        points: 100
-                    },
-                    { 
-                        text: 'Probeer er nog wat mensen bij te proppen.',
-                        correct: false,
-                        feedback: 'Onveilig en illegaal!',
-                        points: -50
-                    },
-                    { 
-                        text: 'Rij maar door, volgende bus komt zo.',
-                        correct: false,
-                        feedback: 'Te kort door de bocht.',
-                        points: 40
-                    }
-                ].sort(() => Math.random() - 0.5)
-            }
-        };
+    <div class="right-panel">
+      <div class="queue-header">
+        <div class="queue-title"><span>🚨</span><span>Wachtrij</span><span class="queue-count" id="queueCount">0</span></div>
+      </div>
+      <div class="queue-list" id="queueList"></div>
+    </div>
+  </div>
 
-        // Game class
-        class ROVTrainingSystem {
-            constructor() {
-                this.score = 0;
-                this.incidentsHandled = 0;
-                this.currentIncident = null;
-                this.incidentQueue = [];
-                this.gameState = 'start';
-                this.startTime = null;
-                this.map = null;
-            }
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // --- Incident definitions
+    const INCIDENTS = {
+      noodoproep1: {
+        type: 'NOOD', priority: 1, caller: 'Chauffeur Ahmed (Lijn 300)', title: 'Medische noodsituatie',
+        location: 'Haarlemmerplein, Amsterdam', coords: [52.3862, 4.8769],
+        conversation: [{ sender: 'Chauffeur', text: 'ROV! Passagier ligt op de grond en reageert niet! Help!' }],
+        responses: [
+          { text: 'Ahmed, bel direct zelf 112! Ik schakel Service & Veiligheid in, stuur MER en regel ritverval voor lijn 300.', correct: true, feedback: 'Perfect! Juiste procedure gevolgd.', points: 150 },
+          { text: 'Rij snel naar het ziekenhuis.', correct: false, feedback: 'Gevaarlijk! Altijd 112 bellen en ter plaatse blijven.', points: -100 },
+          { text: 'Check of er een AED in de buurt is.', correct: false, feedback: 'Verkeerde prioriteit. Eerst 112!', points: 20 }
+        ].sort(() => Math.random() - 0.5)
+      },
+      voertuigdefect1: {
+        type: 'VD', priority: 2, caller: 'Chauffeur Sarah (Lijn 300)', title: 'Motor Storing',
+        location: 'Haarlemmermeerweg', coords: [52.3648, 4.8285],
+        conversation: [{ sender: 'Chauffeur', text: 'ROV, motorstoring! Bus start niet meer. 22 passagiers aan boord.' }],
+        responses: [
+          { text: 'Sarah, MER onderweg met vervangbus. Monteur gealarmeerd. Ritverval actief. Waarschuwingslichten aan?', correct: true, feedback: 'Uitstekend! Alle procedures gevolgd.', points: 100 },
+          { text: 'Probeer de bus nog een keer te starten.', correct: false, feedback: 'Tijdverlies! Direct vervangbus regelen.', points: 20 },
+          { text: 'Laat passagiers uitstappen, monteur komt.', correct: false, feedback: 'Onvolledig! Vervangbus vergeten.', points: 30 }
+        ].sort(() => Math.random() - 0.5)
+      },
+      busvol1: {
+        type: 'VV', priority: 3, caller: 'Chauffeur Kevin (Lijn 397)', title: 'Bus vol - Schiphol',
+        location: 'Schiphol Plaza', coords: [52.3105, 4.7683],
+        conversation: [{ sender: 'Chauffeur', text: 'Bus stampvol, 20 mensen moeten achterblijven. Wat nu?' }],
+        responses: [
+          { text: 'Check wanneer volgende 397 komt. Overweeg extra bus. Informeer passagiers over wachttijd.', correct: true, feedback: 'Goed! Juiste aanpak voor capaciteitsprobleem.', points: 100 },
+          { text: 'Probeer er nog wat mensen bij te proppen.', correct: false, feedback: 'Onveilig en illegaal!', points: -50 },
+          { text: 'Rij maar door, volgende bus komt zo.', correct: false, feedback: 'Te kort door de bocht.', points: 40 }
+        ].sort(() => Math.random() - 0.5)
+      }
+    };
 
-            start() {
-                this.showStartScreen();
-            }
+    // --- Game class
+    class ROVTrainingSystem {
+      constructor() {
+        this.score = 0;
+        this.incidentsHandled = 0;
+        this.currentIncident = null;
+        this.incidentQueue = [];
+        this.gameState = 'start';
+        this.startTime = null;
+        this.map = null;
+        this.mapMarkers = [];
+        this._timerId = null;
+      }
 
-            showStartScreen() {
-                const workspace = document.getElementById('workspaceContent');
-                workspace.innerHTML = '<div class="start-screen">' +
-                    '<div class="start-title">ROV Training Module</div>' +
-                    '<div class="start-description">' +
-                        'Welkom bij de ROV training!<br><br>' +
-                        '• Kies incidenten uit de wachtrij<br>' +
-                        '• Handel ze correct af volgens Transdev procedures<br>' +
-                        '• Let op prioriteiten!<br>' +
-                    '</div>' +
-                    '<button class="start-btn" onclick="game.startShift()">Start Training</button>' +
-                '</div>';
-            }
+      start() { this.showStartScreen(); }
 
-            startShift() {
-                this.gameState = 'playing';
-                this.startTime = Date.now();
-                this.generateIncidents();
-                this.updateQueue();
-                this.showWaitingScreen();
-                this.startTimer();
-            }
+      showStartScreen() {
+        const workspace = document.getElementById('workspaceContent');
+        workspace.innerHTML = `
+          <div class="start-screen">
+            <div class="start-title">ROV Training Module</div>
+            <div class="start-description">
+              Welkom bij de ROV training!<br><br>
+              • Kies incidenten uit de wachtrij<br>
+              • Handel ze correct af volgens Transdev procedures<br>
+              • Let op prioriteiten!<br>
+            </div>
+            <button class="start-btn" onclick="game.startShift()">Start Training</button>
+          </div>`;
+      }
 
-            generateIncidents() {
-                Object.keys(INCIDENTS).forEach(key => {
-                    this.incidentQueue.push({
-                        ...INCIDENTS[key],
-                        id: 'inc_' + Math.random().toString(36).substr(2, 9)
-                    });
-                });
-                this.incidentQueue.sort((a, b) => a.priority - b.priority);
-            }
+      startShift() {
+        this.gameState = 'playing';
+        this.startTime = Date.now();
+        this.generateIncidents();
+        this.updateQueue();
+        this.showWaitingScreen();
+        this.startTimer();
+      }
 
-            showWaitingScreen() {
-                document.getElementById('workspaceContent').innerHTML = 
-                    '<div class="waiting-screen">' +
-                    '<div style="font-size: 4em;">📞</div>' +
-                    '<h2>Selecteer een incident uit de wachtrij</h2>' +
-                    '</div>';
-            }
-
-            updateQueue() {
-                const queueList = document.getElementById('queueList');
-                const queueCount = document.getElementById('queueCount');
-                
-                queueCount.textContent = this.incidentQueue.length;
-                
-                if (this.incidentQueue.length === 0) {
-                    queueList.innerHTML = '<div style="text-align: center; color: #718096; padding: 20px;">Geen incidenten</div>';
-                    return;
-                }
-                
-                queueList.innerHTML = this.incidentQueue.map(inc => 
-                    '<div class="incident-card priority-' + inc.priority + '">' +
-                    '<div class="incident-header">' +
-                        '<span class="incident-type">' + inc.type + '</span>' +
-                        '<span class="incident-time">Wachtend</span>' +
-                    '</div>' +
-                    '<div class="incident-title">' + inc.title + '</div>' +
-                    '<div class="incident-location">📍 ' + inc.location + '</div>' +
-                    '<button class="accept-btn" onclick="game.acceptIncident(\'' + inc.id + '\')">Oppakken</button>' +
-                    '</div>'
-                ).join('');
-            }
-
-            acceptIncident(id) {
-                const incident = this.incidentQueue.find(i => i.id === id);
-                if (!incident) return;
-                
-                this.currentIncident = incident;
-                this.incidentQueue = this.incidentQueue.filter(i => i.id !== id);
-                this.updateQueue();
-                this.displayIncident();
-            }
-
-            displayIncident() {
-                const incident = this.currentIncident;
-                const workspace = document.getElementById('workspaceContent');
-                
-                workspace.innerHTML = '<div class="conversation-view">' +
-                    '<div class="conversation-header">' +
-                        '<div class="caller-info">' + incident.caller + '</div>' +
-                        '<div class="call-timer">00:00</div>' +
-                    '</div>' +
-                    '<div class="conversation-messages">' +
-                        incident.conversation.map(msg => 
-                            '<div class="message from-caller">' +
-                            '<div class="message-sender">' + msg.sender + '</div>' +
-                            '<div>' + msg.text + '</div>' +
-                            '</div>'
-                        ).join('') +
-                    '</div>' +
-                    '<div class="response-options">' +
-                        incident.responses.map((resp, idx) => 
-                            '<button class="response-btn" onclick="game.selectResponse(' + idx + ')">' +
-                            resp.text +
-                            '</button>'
-                        ).join('') +
-                    '</div>' +
-                '</div>';
-            }
-
-            selectResponse(index) {
-                const response = this.currentIncident.responses[index];
-                this.score += response.points;
-                document.getElementById('score').textContent = this.score;
-                
-                const buttons = document.querySelectorAll('.response-btn');
-                buttons.forEach((btn, i) => {
-                    btn.disabled = true;
-                    if (this.currentIncident.responses[i].correct) {
-                        btn.classList.add('correct');
-                    } else if (i === index && !response.correct) {
-                        btn.classList.add('incorrect');
-                    }
-                });
-                
-                const messagesDiv = document.querySelector('.conversation-messages');
-                messagesDiv.innerHTML += 
-                    '<div class="feedback ' + (response.correct ? '' : 'negative') + '">' +
-                    '<strong>' + (response.correct ? '✓ Correct!' : '✗ Fout') + '</strong><br>' +
-                    response.feedback + '<br>' +
-                    'Punten: ' + (response.points > 0 ? '+' : '') + response.points +
-                    '</div>';
-                
-                setTimeout(() => {
-                    document.querySelector('.response-options').innerHTML = 
-                        '<button class="start-btn" onclick="game.nextIncident()">Volgende</button>';
-                }, 1000);
-                
-                this.incidentsHandled++;
-            }
-
-            nextIncident() {
-                this.currentIncident = null;
-                if (this.incidentQueue.length > 0) {
-                    this.showWaitingScreen();
-                } else {
-                    this.endShift();
-                }
-            }
-
-            startTimer() {
-                setInterval(() => {
-                    if (this.gameState !== 'playing') return;
-                    const elapsed = Date.now() - this.startTime;
-                    const minutes = Math.floor(elapsed / 60000);
-                    const seconds = Math.floor((elapsed % 60000) / 1000);
-                    document.getElementById('shiftTime').textContent = 
-                        String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
-                }, 1000);
-            }
-
-            endShift() {
-                this.gameState = 'ended';
-                const workspace = document.getElementById('workspaceContent');
-                workspace.innerHTML = '<div class="start-screen">' +
-                    '<div class="start-title">Training Voltooid!</div>' +
-                    '<div style="font-size: 3em; color: #E30613; margin: 20px 0;">' + this.score + ' punten</div>' +
-                    '<div class="start-description">' +
-                        'Incidenten afgehandeld: ' + this.incidentsHandled + '<br>' +
-                        'Gemiddelde score: ' + Math.round(this.score / this.incidentsHandled) + '<br>' +
-                    '</div>' +
-                    '<button class="start-btn" onclick="location.reload()">Opnieuw</button>' +
-                '</div>';
-            }
-
-            showMap() {
-                document.getElementById('workspaceContent').innerHTML = 
-                    '<div id="mapContainer"></div>' +
-                    '<div class="map-overlay-info">' +
-                    'Kaart komt binnenkort...' +
-                    '</div>';
-            }
-        }
-
-        // Initialize game
-        let game;
-
-        // Menu handling
-        function setActiveMenu(element, section) {
-            document.querySelectorAll('.menu-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            element.classList.add('active');
-            
-            if (section === 'rov') {
-                game = new ROVTrainingSystem();
-                game.start();
-            }
-        }
-
-        // Tab switching
-        function switchTab(element, tab) {
-            document.querySelectorAll('.workspace-tab').forEach(t => {
-                t.classList.remove('active');
-            });
-            element.classList.add('active');
-            
-            if (tab === 'map' && game) {
-                game.showMap();
-            } else if (tab === 'conversation' && game) {
-                if (game.currentIncident) {
-                    game.displayIncident();
-                } else {
-                    game.showWaitingScreen();
-                }
-            }
-        }
-
-        // Start on load
-        window.addEventListener('DOMContentLoaded', function() {
-            game = new ROVTrainingSystem();
-            game.start();
+      generateIncidents() {
+        Object.keys(INCIDENTS).forEach(key => {
+          this.incidentQueue.push({ ...INCIDENTS[key], id: 'inc_' + Math.random().toString(36).slice(2, 11) });
         });
-    </script>
+        this.incidentQueue.sort((a, b) => a.priority - b.priority);
+      }
+
+      showWaitingScreen() {
+        document.getElementById('workspaceContent').innerHTML = `
+          <div class="waiting-screen">
+            <div style="font-size: 4em;">📞</div>
+            <h2>Selecteer een incident uit de wachtrij</h2>
+          </div>`;
+      }
+
+      updateQueue() {
+        const queueList = document.getElementById('queueList');
+        const queueCount = document.getElementById('queueCount');
+        queueCount.textContent = this.incidentQueue.length;
+        if (this.incidentQueue.length === 0) {
+          queueList.innerHTML = '<div style="text-align:center;color:#718096;padding:20px;">Geen incidenten</div>';
+          return;
+        }
+        queueList.innerHTML = this.incidentQueue.map(inc => `
+          <div class="incident-card priority-${inc.priority}">
+            <div class="incident-header">
+              <span class="incident-type">${inc.type}</span>
+              <span class="incident-time">Wachtend</span>
+            </div>
+            <div class="incident-title">${inc.title}</div>
+            <div class="incident-location">📍 ${inc.location}</div>
+            <button class="accept-btn" onclick="game.acceptIncident('${inc.id}')">Oppakken</button>
+          </div>`).join('');
+      }
+
+      acceptIncident(id) {
+        const incident = this.incidentQueue.find(i => i.id === id);
+        if (!incident) return;
+        this.currentIncident = incident;
+        this.incidentQueue = this.incidentQueue.filter(i => i.id !== id);
+        this.updateQueue();
+        this.displayIncident();
+        // Also focus the map on this incident if map is active
+        if (this.map) this.focusMapOnIncident(incident);
+      }
+
+      displayIncident() {
+        const incident = this.currentIncident;
+        const workspace = document.getElementById('workspaceContent');
+        workspace.innerHTML = `
+          <div class="conversation-view">
+            <div class="conversation-header">
+              <div class="caller-info">${incident.caller}</div>
+              <div class="call-timer">00:00</div>
+            </div>
+            <div class="conversation-messages">
+              ${incident.conversation.map(msg => `
+                <div class="message from-caller">
+                  <div class="message-sender">${msg.sender}</div>
+                  <div>${msg.text}</div>
+                </div>`).join('')}
+            </div>
+            <div class="response-options">
+              ${incident.responses.map((resp, idx) => `
+                <button class="response-btn" onclick="game.selectResponse(${idx})">${resp.text}</button>`).join('')}
+            </div>
+          </div>`;
+      }
+
+      selectResponse(index) {
+        const response = this.currentIncident.responses[index];
+        this.score += response.points;
+        document.getElementById('score').textContent = this.score;
+        const buttons = document.querySelectorAll('.response-btn');
+        buttons.forEach((btn, i) => {
+          btn.disabled = true;
+          if (this.currentIncident.responses[i].correct) btn.classList.add('correct');
+          else if (i === index && !response.correct) btn.classList.add('incorrect');
+        });
+        const messagesDiv = document.querySelector('.conversation-messages');
+        messagesDiv.innerHTML += `
+          <div class="feedback ${response.correct ? '' : 'negative'}">
+            <strong>${response.correct ? '✓ Correct!' : '✗ Fout'}</strong><br>
+            ${response.feedback}<br>
+            Punten: ${response.points > 0 ? '+' : ''}${response.points}
+          </div>`;
+        setTimeout(() => {
+          document.querySelector('.response-options').innerHTML = '<button class="start-btn" onclick="game.nextIncident()">Volgende</button>';
+        }, 800);
+        this.incidentsHandled++;
+      }
+
+      nextIncident() {
+        this.currentIncident = null;
+        if (this.incidentQueue.length > 0) this.showWaitingScreen();
+        else this.endShift();
+      }
+
+      startTimer() {
+        if (this._timerId) clearInterval(this._timerId);
+        this._timerId = setInterval(() => {
+          if (this.gameState !== 'playing') return;
+          const elapsed = Date.now() - this.startTime;
+          const minutes = Math.floor(elapsed / 60000);
+          const seconds = Math.floor((elapsed % 60000) / 1000);
+          document.getElementById('shiftTime').textContent = String(minutes).padStart(2,'0') + ':' + String(seconds).padStart(2,'0');
+        }, 1000);
+      }
+
+      endShift() {
+        this.gameState = 'ended';
+        if (this._timerId) clearInterval(this._timerId);
+        const avg = this.incidentsHandled ? Math.round(this.score / this.incidentsHandled) : 0;
+        const workspace = document.getElementById('workspaceContent');
+        workspace.innerHTML = `
+          <div class="start-screen">
+            <div class="start-title">Training Voltooid!</div>
+            <div style="font-size: 3em; color: #E30613; margin: 20px 0;">${this.score} punten</div>
+            <div class="start-description">
+              Incidenten afgehandeld: ${this.incidentsHandled}<br>
+              Gemiddelde score: ${avg}<br>
+            </div>
+            <button class="start-btn" onclick="location.reload()">Opnieuw</button>
+          </div>`;
+      }
+
+      showMap() {
+        // Create wrapper with overlay INSIDE the same positioned container
+        document.getElementById('workspaceContent').innerHTML = `
+          <div id="mapWrapper">
+            <div id="mapContainer"></div>
+            <div class="map-overlay-info">Klik op een kaartmarker om details te zien.</div>
+          </div>`;
+        // Initialize Leaflet map only once
+        if (!this.map) {
+          this.map = L.map('mapContainer', { zoomControl: true });
+          const centerNL = [52.2, 5.3];
+          this.map.setView(centerNL, 8);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap-bijdragers'
+          }).addTo(this.map);
+          // Add markers for all incidents in queue + current
+          this.renderIncidentMarkers();
+        } else {
+          this.map.invalidateSize();
+        }
+      }
+
+      renderIncidentMarkers() {
+        // Clear previous markers
+        this.mapMarkers.forEach(m => this.map.removeLayer(m));
+        this.mapMarkers = [];
+        const all = [...this.incidentQueue];
+        if (this.currentIncident) all.push(this.currentIncident);
+        all.forEach(inc => {
+          const marker = L.marker(inc.coords).addTo(this.map);
+          marker.bindPopup(`<strong>${inc.title}</strong><br/>${inc.location}<br/><em>Prioriteit ${inc.priority}</em>`);
+          marker.on('click', () => this.focusMapOnIncident(inc));
+          this.mapMarkers.push(marker);
+        });
+      }
+
+      focusMapOnIncident(inc) {
+        if (!this.map) return;
+        this.map.setView(inc.coords, 14, { animate: true });
+        const m = this.mapMarkers.find(mm => mm.getLatLng().lat === inc.coords[0] && mm.getLatLng().lng === inc.coords[1]);
+        if (m) m.openPopup();
+      }
+    }
+
+    // --- Initialize game and UI handlers
+    let game;
+
+    function setActiveMenu(element, section) {
+      document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+      element.classList.add('active');
+      if (section === 'rov') {
+        game = new ROVTrainingSystem();
+        game.start();
+      } else {
+        // Simple placeholder for other sections
+        document.getElementById('workspaceContent').innerHTML = `
+          <div class="waiting-screen"><div style="font-size:3em;">🛠️</div><p>"${section}" komt binnenkort…</p></div>`;
+      }
+    }
+
+    function switchTab(element, tab) {
+      document.querySelectorAll('.workspace-tab').forEach(t => t.classList.remove('active'));
+      element.classList.add('active');
+      if (!game) return;
+      if (tab === 'map') {
+        game.showMap();
+        // Re-render markers (e.g., after queue changes)
+        game.renderIncidentMarkers();
+      } else if (tab === 'conversation') {
+        if (game.currentIncident) game.displayIncident(); else game.showWaitingScreen();
+      } else if (tab === 'resources') {
+        document.getElementById('workspaceContent').innerHTML = `
+          <div class="waiting-screen"><div style="font-size:3em;">📋</div><p>Procedurekaarten & checklists volgen hier.</p></div>`;
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      game = new ROVTrainingSystem();
+      game.start();
+    });
+  </script>
 </body>
 </html>
