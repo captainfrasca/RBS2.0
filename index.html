@@ -234,7 +234,7 @@
         list.innerHTML=this.incidentQueue.map(inc=>{const wt=Math.floor((now-inc.addedTime)/1000); const disp=wt>60?Math.floor(wt/60)+' min':wt+' sec';
           return `<div class="incident-card priority-${inc.priority}">
             <div class="incident-header"><span class="incident-type">${inc.type}</span><span class="incident-time" style="color:${wt>120?'#e53e3e':'#718096'}">⏱️ ${disp}</span></div>
-            <div class="incident-title">${inc.title}</div>
+            <div class=\"incident-title\">${inc.priority===1 ? 'NOODOPROEP \u2013 details onbekend' : inc.title}<\/div>
             <div class="incident-location">📍 ${inc.location}</div>
             <button class="accept-btn" onclick="game.acceptIncident('${inc.id}')">OPPAKKEN</button>
           </div>`;}).join('');
@@ -306,7 +306,9 @@
         this._renderMarkers();
       }
 
-      _renderMarkers(){ if(!this.map) return; this.mapMarkers.forEach(m=>this.map.removeLayer(m)); this.mapMarkers=[]; const all=[...this.incidentQueue]; if(this.currentIncident) all.push(this.currentIncident); all.forEach(inc=>{ const m=L.circleMarker(inc.coords,{radius:8,weight:2,fillOpacity:.8,color:inc.priority===1?'#e53e3e':inc.priority===2?'#f6ad55':'#3182ce'}).addTo(this.map); m.bindPopup(`<strong>${inc.title}</strong><br>${inc.location}<br><em>Prioriteit ${inc.priority}</em>`); m.on('click',()=>{ this.map.setView(inc.coords,14,{animate:true}); m.openPopup(); }); this.mapMarkers.push(m); }); }
+      _renderMarkers(){ if(!this.map) return; this.mapMarkers.forEach(m=>this.map.removeLayer(m)); this.mapMarkers=[]; const all=[...this.incidentQueue]; if(this.currentIncident) all.push(this.currentIncident); all.forEach(inc=>{ const m=L.circleMarker(inc.coords,{radius:8,weight:2,fillOpacity:.8,color:inc.priority===1?'#e53e3e':inc.priority===2?'#f6ad55':'#3182ce'}).addTo(this.map);
+          const puTitle = inc.priority===1 ? 'Noodoproep \u2013 details onbekend' : inc.title;
+          m.bindPopup(`<strong>${puTitle}</strong><br>${inc.location}<br><em>Prioriteit ${inc.priority}</em>`); m.on('click',()=>{ this.map.setView(inc.coords,14,{animate:true}); m.openPopup(); }); this.mapMarkers.push(m); }); }
     }
 
     // --- Initialize
