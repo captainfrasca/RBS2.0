@@ -1833,5 +1833,147 @@
             openRBSModal();
         }
     </script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+
+<script>
+// Firebase configuratie
+const firebaseConfig = {
+  apiKey: "AIzaSyDpGn5-OgZyZB-H68S6XQ7GvkJXePLNvc0",
+  authDomain: "rbs20-7df9b.firebaseapp.com",
+  databaseURL: "https://rbs20-7df9b-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "rbs20-7df9b",
+  storageBucket: "rbs20-7df9b.firebasestorage.app",
+  messagingSenderId: "1074779022793",
+  appId: "1:1074779022793:web:86c664561738169ff63418"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+console.log('✅ Firebase connected!');
+
+// Live data updates
+function initializeLiveData() {
+    console.log('🔄 Starting live data listeners...');
+    
+    // Luister naar bus updates
+    database.ref('buses').on('value', (snapshot) => {
+        const liveBuses = snapshot.val();
+        if (liveBuses) {
+            updateLiveBuses(liveBuses);
+            console.log('🚌 Buses updated:', Object.keys(liveBuses).length);
+        }
+    });
+    
+    // Luister naar nieuwe incidenten
+    database.ref('incidents').on('child_added', (snapshot) => {
+        const incident = snapshot.val();
+        addLiveIncident(incident);
+        console.log('⚠️ New incident:', incident.type);
+    });
+    
+    // Luister naar noodoproepen
+    database.ref('emergencies').on('child_added', (snapshot) => {
+        const emergency = snapshot.val();
+        if (emergency.timestamp > Date.now() - 60000) {
+            incomingEmergencyCall(emergency);
+            console.log('🚨 EMERGENCY CALL!');
+        }
+    });
+}
+
+// Update bus markers met live data
+function updateLiveBuses(liveBuses) {
+    if (!window.busMarkers) {
+        console.log('⏳ Map not ready yet, skipping bus update');
+        return;
+    }
+    
+    busMarkers.clearLayers();
+    
+    Object.keys(liveBuses).forEach(busId => {
+        const bus = liveBuses[busId];
+        
+        const iconColor = bus.status === 'stopped' ? '#e53e3e' : 
+                         bus.status === 'delayed' ? '#dd6b20' : '#38a169';
+        
+        const busIcon = L.divIcon({
+            className: 'bus-marker-icon',
+            html: `<div style="background: ${iconColor}; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 9px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">${bus.line}</div>`,
+            iconSize: [32, 32]
+        });
+        
+        const marker = L.marker([bus.lat, bus.lng], { icon: busIcon })
+            .bindPopup(`
+                <div style="font-family: Arial, sans-serif;">
+                    <strong style="color: #E30613; font-size: 14px;">Lijn ${bus.line}</strong><br>
+                    <strong>Status:</strong> ${bus.status}<br>
+                    <strong>Snelheid:</strong> ${bus.speed || 0} km/u<br>
+                    <strong>Passagiers:</strong> ${bus.passengers || 0}<br>
+                    <small style="color: #666;">Live data</small>
+                </div>
+            `);
+        
+        busMarkers.addLayer(marker);
+    });
+}
+
+// Voeg live incident toe aan de lijst
+function addLiveIncident(incident) {
+    const incidentsList = document.getElementById('incidentsList');
+    if (!incidentsList) {
+        console.log('⚠️ Incidents list not found');
+        return;
+    }
+    
+    const incidentDiv = document.createElement('div');
+    incidentDiv.className = `incident-item ${incident.priority || 'info'}`;
+    incidentDiv.style.animation = 'slideIn 0.3s ease-out';
+    incidentDiv.innerHTML = `
+        <div class="incident-header">
+            <span class="incident-type">${incident.type}</span>
+            <span class="incident-time" style="background: #38a169; color: white; padding: 2px 8px; border-radius: 3px; font-size: 0.75em;">🔴 LIVE</span>
+        </div>
+        <div><strong>${incident.line}</strong> - ${incident.description}</div>
+        <div style="font-size: 0.8em; color: #a0aec0; margin-top: 4px;">${incident.location}</div>
+    `;
+    
+    // Voeg toe bovenaan de lijst
+    incidentsList.insertBefore(incidentDiv, incidentsList.firstChild);
+    
+    // Beperk tot maximaal 10 incidenten
+    while (incidentsList.children.length > 10) {
+        incidentsList.removeChild(incidentsList.lastChild);
+    }
+}
+
+// Start live data wanneer pagina klaar is
+window.addEventListener('load', function() {
+    console.log('📱 Page loaded, waiting for map...');
+    setTimeout(() => {
+        initializeLiveData();
+    }, 2000);
+});
+
+// CSS animatie voor nieuwe incidenten
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
+    
 </body>
+
 </html>
