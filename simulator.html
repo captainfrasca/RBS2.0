@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transdev Live Data Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            color: white;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            color: #E30613;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            color: #a0aec0;
+            font-size: 1.1em;
+        }
+        
+        .controls {
+            background: #2d3748;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        .control-section {
+            margin-bottom: 20px;
+        }
+        
+        .control-section h3 {
+            color: #E30613;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        button {
+            padding: 15px 30px;
+            margin: 10px 10px 10px 0;
+            background: #E30613;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #cc0510;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(227, 6, 19, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button.stop {
+            background: #718096;
+        }
+        
+        button.stop:hover {
+            background: #4a5568;
+        }
+        
+        .status {
+            background: #2d3748;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #E30613;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        .status.active {
+            border-left-color: #38a169;
+            background: #1e3a2e;
+        }
+        
+        .emoji {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: #1a202c;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            color: #E30613;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            color: #a0aec0;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><span class="emoji">🚌</span>Transdev Live Data Simulator</h1>
+            <p class="subtitle">Real-time test data generator voor je dashboard</p>
+        </div>
+        
+        <div class="controls">
+            <div class="control-section">
+                <h3>🚌 Bus Simulatie</h3>
+                <button onclick="startBusSimulation()">▶️ Start Bus Simulatie (20 bussen)</button>
+                <button class="stop" onclick="stopSimulation()">⏸️ Stop Simulatie</button>
+            </div>
+            
+            <div class="control-section">
+                <h3>⚠️ Incidenten & Noodoproepen</h3>
+                <button onclick="createIncident()">⚠️ Maak Random Incident</button>
+                <button onclick="triggerEmergency()">🚨 Trigger Noodoproep</button>
+            </div>
+            
+            <div class="control-section">
+                <h3>🗑️ Database Beheer</h3>
+                <button class="stop" onclick="clearAllData()">🗑️ Wis Alle Data</button>
+            </div>
+        </div>
+        
+        <div class="status" id="status">
+            <span class="emoji">⏳</span>Status: Wachten op actie...
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="busCount">0</div>
+                <div class="stat-label">Actieve Bussen</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="incidentCount">0</div>
+                <div class="stat-label">Incidenten</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="emergencyCount">0</div>
+                <div class="stat-label">Noodoproepen</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    
+    <script>
+        // Firebase configuratie
+        const firebaseConfig = {
+            apiKey: "AIzaSyDpGn5-OgZyZB-H68S6XQ7GvkJXePLNvc0",
+            authDomain: "rbs20-7df9b.firebaseapp.com",
+            databaseURL: "https://rbs20-7df9b-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "rbs20-7df9b",
+            storageBucket: "rbs20-7df9b.firebasestorage.app",
+            messagingSenderId: "1074779022793",
+            appId: "1:1074779022793:web:86c664561738169ff63418"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        let simulationInterval = null;
+        let busCount = 0;
+        
+        // Monitor database voor stats
+        database.ref('buses').on('value', (snapshot) => {
+            busCount = snapshot.val() ? Object.keys(snapshot.val()).length : 0;
+            document.getElementById('busCount').textContent = busCount;
+        });
+        
+        database.ref('incidents').on('value', (snapshot) => {
+            const count = snapshot.val() ? Object.keys(snapshot.val()).length : 0;
+            document.getElementById('incidentCount').textContent = count;
+        });
+        
+        database.ref('emergencies').on('value', (snapshot) => {
+            const count = snapshot.val() ? Object.keys(snapshot.val()).length : 0;
+            document.getElementById('emergencyCount').textContent = count;
+        });
+        
+        function startBusSimulation() {
+            if (simulationInterval) {
+                updateStatus('⚠️ Simulatie loopt al!', false);
+                return;
+            }
+            
+            updateStatus('🟢 Bus simulatie actief - 20 bussen updaten elke 3 seconden', true);
+            
+            // Nederlandse steden als centrum punten
+            const cities = [
+                { name: 'Amsterdam', lat: 52.3676, lng: 4.9041 },
+                { name: 'Rotterdam', lat: 51.9225, lng: 4.47917 },
+                { name: 'Utrecht', lat: 52.0907, lng: 5.1214 },
+                { name: 'Eindhoven', lat: 51.4416, lng: 5.4697 }
+            ];
+            
+            // Simuleer 20 bussen
+            simulationInterval = setInterval(() => {
+                for (let i = 1; i <= 20; i++) {
+                    const city = cities[i % cities.length];
+                    
+                    const bus = {
+                        line: ['300', '397', '346', '401', '81', '120', '28', '156'][Math.floor(Math.random() * 8)],
+                        lat: city.lat + (Math.random() - 0.5) * 0.1,
+                        lng: city.lng + (Math.random() - 0.5) * 0.1,
+                        status: Math.random() > 0.85 ? 'delayed' : Math.random() > 0.97 ? 'stopped' : 'active',
+                        speed: Math.floor(Math.random() * 70) + 10,
+                        passengers: Math.floor(Math.random() * 50) + 5,
+                        timestamp: Date.now()
+                    };
+                    
+                    database.ref('buses/bus_' + i).set(bus);
+                }
+            }, 3000);
+        }
+        
+        function stopSimulation() {
+            if (simulationInterval) {
+                clearInterval(simulationInterval);
+                simulationInterval = null;
+                updateStatus('⏸️ Simulatie gestopt', false);
+            } else {
+                updateStatus('⚠️ Geen actieve simulatie om te stoppen', false);
+            }
+        }
+        
+        function createIncident() {
+            const types = ['VD', 'VT', 'AR', 'PM', 'WS'];
+            const descriptions = [
+                'Defect voertuig - technische storing',
+                'Vertraging door verkeer',
+                'Ongeval met personenauto',
+                'Chauffeur ziek gemeld',
+                'Weersomstandigheden - gladheid'
+            ];
+            const locations = [
+                'Amsterdam Centraal Station',
+                'Rotterdam Blaak',
+                'Utrecht Centraal Station',
+                'Eindhoven Station',
+                'Den Haag CS',
+                'Schiphol Airport'
+            ];
+            const priorities = ['critical', 'warning', 'info'];
+            
+            const index = Math.floor(Math.random() * types.length);
+            
+            const incident = {
+                type: types[index],
+                line: 'Lijn ' + (Math.floor(Math.random() * 400) + 100),
+                description: descriptions[index],
+                location: locations[Math.floor(Math.random() * locations.length)],
+                priority: priorities[Math.floor(Math.random() * priorities.length)],
+                timestamp: Date.now()
+            };
+            
+            database.ref('incidents').push(incident);
+            updateStatus(`⚠️ Incident aangemaakt: ${incident.type} - ${incident.description}`, false);
+        }
+        
+        function triggerEmergency() {
+            const emergencyTypes = [
+                '🔴 NOODOPROEP - Agressie in bus',
+                '🔴 NOODOPROEP - Medische noodsituatie',
+                '🔴 NOODOPROEP - Ongeval',
+                '🔴 NOODOPROEP - Hulp nodig'
+            ];
+            
+            const emergency = {
+                line: 'Lijn ' + (Math.floor(Math.random() * 400) + 100),
+                driver: 'Chauffeur ' + (Math.floor(Math.random() * 900) + 100),
+                location: 'GPS: 52.' + Math.floor(Math.random() * 9999) + ', 4.' + Math.floor(Math.random() * 9999),
+                type: emergencyTypes[Math.floor(Math.random() * emergencyTypes.length)],
+                timestamp: Date.now()
+            };
+            
+            database.ref('emergencies').push(emergency);
+            updateStatus('🚨 NOODOPROEP VERSTUURD! Check je dashboard direct!', false);
+            
+            // Flash effect
+            document.body.style.backgroundColor = '#E30613';
+            setTimeout(() => {
+                document.body.style.backgroundColor = '';
+            }, 200);
+        }
+        
+        function clearAllData() {
+            if (!confirm('Weet je zeker dat je alle data wilt wissen?')) {
+                return;
+            }
+            
+            database.ref('buses').remove();
+            database.ref('incidents').remove();
+            database.ref('emergencies').remove();
+            
+            updateStatus('🗑️ Alle data gewist uit database', false);
+        }
+        
+        function updateStatus(message, isActive) {
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = message;
+            statusEl.className = isActive ? 'status active' : 'status';
+        }
+    </script>
+</body>
+</html>
