@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transdev RBS 2.0 Command Center</title>
+    <title>Transdev Nederland - RBS Command Center</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     
@@ -35,12 +35,6 @@
             z-index: 1000;
         }
 
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
         .system-title {
             font-size: 1.2em;
             font-weight: bold;
@@ -64,10 +58,7 @@
             transition: all 0.3s;
         }
 
-        .stat-badge:hover {
-            transform: scale(1.05);
-        }
-
+        .stat-badge:hover { transform: scale(1.05); }
         .stat-badge.critical { background: #e53e3e; }
         .stat-badge.warning { background: #dd6b20; }
         .stat-badge.ok { background: #38a169; }
@@ -82,20 +73,9 @@
             animation: alertPulse 2s infinite;
         }
 
-        .alert-bar.warning {
-            background: linear-gradient(90deg, #f6ad55, #ed8936);
-        }
-
         @keyframes alertPulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.85; }
-        }
-
-        .alert-content {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.9em;
         }
 
         .main-container {
@@ -211,13 +191,8 @@
             transition: all 0.3s;
         }
 
-        .overlay-btn:hover {
-            background: #E30613;
-        }
-
-        .overlay-btn.active {
-            background: #E30613;
-        }
+        .overlay-btn:hover { background: #E30613; }
+        .overlay-btn.active { background: #E30613; }
 
         .live-indicator {
             position: absolute;
@@ -427,11 +402,7 @@
 
         .emergency-button {
             background: #e53e3e !important;
-            color: white !important;
-            border: 2px solid white !important;
             animation: emergencyBlink 2s infinite;
-            font-weight: bold;
-            box-shadow: 0 0 20px rgba(229,62,62,0.8);
         }
         
         @keyframes emergencyBlink {
@@ -472,19 +443,19 @@
     </style>
 </head>
 <body>
-    <div class="alert-bar" id="alertBar">
-        <div class="alert-content">
+    <div class="alert-bar">
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 0.9em;">
             <span>⚠️ VERSTORING</span>
-            <span id="alertText">3 Ritten uitgevallen - A2 volledig gestremd</span>
+            <span>3 Ritten uitgevallen - A2 volledig gestremd</span>
         </div>
         <div style="font-size: 0.85em;">
-            <span id="alertTime">Update: 2 min geleden</span>
+            <span>Update: 2 min geleden</span>
         </div>
     </div>
 
     <div id="emergencyPopup" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #e53e3e; color: white; padding: 30px; border-radius: 10px; z-index: 9999; box-shadow: 0 10px 40px rgba(0,0,0,0.8);">
         <h2 style="margin: 0 0 20px 0;">🚨 NOODOPROEP ACTIEF</h2>
-        <div id="emergencyDetails" style="margin-bottom: 20px;">
+        <div style="margin-bottom: 20px;">
             <div style="font-size: 1.2em; margin-bottom: 10px;">Lijn: <span id="emergencyLine">--</span></div>
             <div style="margin-bottom: 5px;">Chauffeur: <span id="emergencyDriver">--</span></div>
             <div style="margin-bottom: 5px;">Locatie: <span id="emergencyLocation">--</span></div>
@@ -501,22 +472,22 @@
     </div>
 
     <div class="header">
-        <div class="logo">
-            <div class="system-title">🚌 TRANSDEV RBS 2.0 COMMAND CENTER</div>
+        <div>
+            <div class="system-title">🚌 TRANSDEV RBS COMMAND CENTER</div>
         </div>
         
         <div class="header-stats">
-            <div class="stat-badge critical" onclick="filterIncidents('critical')">
+            <div class="stat-badge critical">
                 <span>🔴</span>
                 <span id="criticalCount">8</span>
                 <span>Kritiek</span>
             </div>
-            <div class="stat-badge warning" onclick="filterIncidents('warning')">
+            <div class="stat-badge warning">
                 <span>⚠️</span>
                 <span id="warningCount">15</span>
                 <span>Waarschuwing</span>
             </div>
-            <div class="stat-badge info" onclick="filterIncidents('info')">
+            <div class="stat-badge info">
                 <span>ℹ️</span>
                 <span id="infoCount">23</span>
                 <span>Meldingen</span>
@@ -542,6 +513,10 @@
                     <span style="color: #0066cc;">Connexxion</span>
                     <span class="status-count" style="background: #0066cc;">186</span>
                 </div>
+                <div class="status-item" style="background: rgba(0,160,230,0.1);">
+                    <span style="color: #00a0e6;">R-NET</span>
+                    <span class="status-count" style="background: #00a0e6;">42</span>
+                </div>
                 <div class="status-item" style="background: rgba(227,6,19,0.1);">
                     <span style="color: #E30613;">Transdev</span>
                     <span class="status-count" style="background: #E30613;">89</span>
@@ -558,6 +533,14 @@
                     <span>🏙️</span>
                     <span>Amsterdam/Schiphol</span>
                 </div>
+                <div class="menu-item" onclick="setView('noordholland')">
+                    <span>🏙️</span>
+                    <span>Noord-Holland Noord</span>
+                </div>
+                <div class="menu-item" onclick="setView('rotterdam')">
+                    <span>🏙️</span>
+                    <span>Rotterdam/Den Haag</span>
+                </div>
                 <div class="menu-item" onclick="setView('utrecht')">
                     <span>🏙️</span>
                     <span>Utrecht</span>
@@ -565,6 +548,14 @@
                 <div class="menu-item" onclick="setView('eindhoven')">
                     <span>🏙️</span>
                     <span>Eindhoven</span>
+                </div>
+                <div class="menu-item" onclick="setView('arnhem')">
+                    <span>🏙️</span>
+                    <span>Arnhem/Nijmegen</span>
+                </div>
+                <div class="menu-item" onclick="setView('apeldoorn')">
+                    <span>🏙️</span>
+                    <span>Apeldoorn/Ede</span>
                 </div>
             </div>
 
@@ -627,7 +618,7 @@
                             <span class="incident-time">10:52</span>
                         </div>
                         <div><strong>Lijn 397</strong> - Chauffeur ziek</div>
-                        <div style="font-size: 0.8em; color: #a0aec0;">Schiphol Plaza - 42 reizigers wachten</div>
+                        <div style="font-size: 0.8em; color: #a0aec0;">Schiphol Plaza</div>
                     </div>
 
                     <div class="incident-item warning">
@@ -636,7 +627,7 @@
                             <span class="incident-time">10:45</span>
                         </div>
                         <div><strong>Bus 8234</strong> - Motor storing</div>
-                        <div style="font-size: 0.8em; color: #a0aec0;">Lijn 81 - Monteur onderweg</div>
+                        <div style="font-size: 0.8em; color: #a0aec0;">Lijn 81</div>
                     </div>
 
                     <div class="incident-item info">
@@ -645,7 +636,7 @@
                             <span class="incident-time">10:38</span>
                         </div>
                         <div><strong>Lijn 23</strong> - Route aangepast</div>
-                        <div style="font-size: 0.8em; color: #a0aec0;">Den Haag CS - Wegwerkzaamheden</div>
+                        <div style="font-size: 0.8em; color: #a0aec0;">Den Haag CS</div>
                     </div>
                 </div>
             </div>
@@ -666,16 +657,16 @@
                         <option value="">-- Selecteer Type --</option>
                         <option value="R1">Rituitval (R1)</option>
                         <option value="VD">Voertuig Defect (VD)</option>
-                        <option value="AR">Aanrijding/Ongeval (AR)</option>
-                        <option value="VT">Vertragingsmelding (VT)</option>
-                        <option value="PM">Personele Mutatie (PM)</option>
-                        <option value="OM">Omleidingen (OM)</option>
+                        <option value="AR">Aanrijding (AR)</option>
+                        <option value="VT">Vertraging (VT)</option>
+                        <option value="PM">Personeel (PM)</option>
+                        <option value="OM">Omleiding (OM)</option>
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Lijn/Voertuig</label>
-                    <input type="text" class="form-input" id="lineNumber" placeholder="Bijv: 397, Bus 8234" required>
+                    <input type="text" class="form-input" id="lineNumber" placeholder="Bijv: 397" required>
                 </div>
 
                 <div class="form-group">
@@ -694,10 +685,10 @@
 
                 <div class="form-group">
                     <label class="form-label">Omschrijving</label>
-                    <textarea class="form-input" id="description" rows="3" placeholder="Beschrijf de situatie..." required></textarea>
+                    <textarea class="form-input" id="description" rows="3" required></textarea>
                 </div>
 
-                <button type="submit" class="submit-btn">📋 RBS Melding Aanmaken</button>
+                <button type="submit" class="submit-btn">📋 Melding Aanmaken</button>
             </form>
         </div>
     </div>
@@ -725,61 +716,52 @@
                 <div class="form-group">
                     <label class="form-label">Getroffen Lijn</label>
                     <select class="form-select" id="diversionLine">
-                        <option value="300">Lijn 300 - Haarlem - Schiphol</option>
-                        <option value="397">Lijn 397 - Amsterdam - Schiphol</option>
-                        <option value="340">R-NET 340 - Haarlem - Schiphol</option>
-                        <option value="346">Lijn 346 - Haarlem - Schiphol</option>
-                        <option value="401">Lijn 401 - Eindhoven - Airport</option>
+                        <option value="300">Lijn 300</option>
+                        <option value="397">Lijn 397</option>
+                        <option value="340">R-NET 340</option>
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Locatie Blokkering</label>
-                    <input type="text" class="form-input" id="diversionLocation" placeholder="Klik op kaart of vul adres in">
+                    <input type="text" class="form-input" id="diversionLocation" placeholder="Klik op kaart">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Verwachte Duur</label>
                     <select class="form-select" id="diversionDuration">
-                        <option value="15">15 minuten</option>
-                        <option value="30">30 minuten</option>
+                        <option value="15">15 min</option>
+                        <option value="30">30 min</option>
                         <option value="60">1 uur</option>
                         <option value="120">2+ uur</option>
                     </select>
                 </div>
 
                 <button type="button" class="submit-btn" onclick="calculateDiversionRoutes()">
-                    Bereken Alternatieve Routes
+                    Bereken Routes
                 </button>
 
                 <div id="diversionResults" style="display: none; margin-top: 20px;">
-                    <h3 style="color: #E30613; margin-bottom: 10px;">Beschikbare Routes</h3>
+                    <h3 style="color: #E30613; margin-bottom: 10px;">Routes</h3>
                     
                     <div class="diversion-route-card selected" onclick="selectDiversionRoute(1)">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <strong>Route A - Via Parallelweg</strong>
+                        <div style="display: flex; justify-content: space-between;">
+                            <strong>Route A</strong>
                             <span style="color: #48bb78;">+8 min</span>
                         </div>
-                        <div style="font-size: 0.85em; color: #a0aec0;">
-                            12.3 km | 3 haltes overgeslagen
-                        </div>
-                        <div style="background: #dd6b20; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; display: inline-block; margin-top: 5px;">
-                            ⚠️ Smalle weg bij km 4.2
-                        </div>
+                        <div style="font-size: 0.85em; color: #a0aec0;">12.3 km</div>
                     </div>
 
                     <div class="diversion-route-card" onclick="selectDiversionRoute(2)">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <strong>Route B - Via Ringweg</strong>
+                        <div style="display: flex; justify-content: space-between;">
+                            <strong>Route B</strong>
                             <span style="color: #48bb78;">+15 min</span>
                         </div>
-                        <div style="font-size: 0.85em; color: #a0aec0;">
-                            18.7 km | 1 halte overgeslagen
-                        </div>
+                        <div style="font-size: 0.85em; color: #a0aec0;">18.7 km</div>
                     </div>
 
                     <button type="button" class="submit-btn" onclick="deployDiversionRoute()">
-                        Deploy Gekozen Route
+                        Deploy Route
                     </button>
                 </div>
             </div>
@@ -793,14 +775,60 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
     
     <script>
-        let map;
-        let busMarkers;
-        let incidentMarkers;
-        let diversionMap;
-        let diversionMarker;
+        let map, busMarkers, incidentMarkers;
+        let diversionMap, diversionMarker;
         let selectedDiversionType = 'loading';
         let selectedDiversionRoute = 1;
         let activeEmergencies = [];
+
+        const busData = [
+            // NOORD-HOLLAND NOORD
+            { line: '130', lat: 52.6324, lng: 4.7534, status: 'active', operator: 'Connexxion' },
+            { line: '135', lat: 52.7204, lng: 4.7601, status: 'active', operator: 'Connexxion' },
+            { line: '151', lat: 52.5074, lng: 4.6587, status: 'delayed', operator: 'Connexxion' },
+            { line: '160', lat: 52.6421, lng: 5.0571, status: 'active', operator: 'Connexxion' },
+            
+            // EINDHOVEN
+            { line: '401', lat: 51.4416, lng: 5.4697, status: 'active', operator: 'Transdev' },
+            { line: '402', lat: 51.4356, lng: 5.4813, status: 'active', operator: 'Transdev' },
+            { line: '403', lat: 51.4871, lng: 5.4547, status: 'stopped', operator: 'Transdev' },
+            { line: '7', lat: 51.4504, lng: 5.4534, status: 'active', operator: 'Transdev' },
+            
+            // ARNHEM
+            { line: '1', lat: 51.9851, lng: 5.8987, status: 'active', operator: 'Breng' },
+            { line: '3', lat: 51.9823, lng: 5.9156, status: 'active', operator: 'Breng' },
+            { line: '331', lat: 51.9884, lng: 5.9454, status: 'active', operator: 'Breng' },
+            
+            // NIJMEGEN
+            { line: '6', lat: 51.8426, lng: 5.8545, status: 'active', operator: 'Breng' },
+            { line: '8', lat: 51.8336, lng: 5.8612, status: 'active', operator: 'Breng' },
+            { line: '300', lat: 51.8125, lng: 5.8371, status: 'active', operator: 'Breng' },
+            
+            // APELDOORN
+            { line: '102', lat: 52.2115, lng: 5.9699, status: 'active', operator: 'Connexxion' },
+            { line: '103', lat: 52.2073, lng: 5.9564, status: 'active', operator: 'Connexxion' },
+            { line: '17', lat: 52.2201, lng: 5.9678, status: 'delayed', operator: 'Connexxion' },
+            
+            // EDE
+            { line: '86', lat: 52.0445, lng: 5.6643, status: 'active', operator: 'Connexxion' },
+            { line: '88', lat: 52.0578, lng: 5.6712, status: 'active', operator: 'Connexxion' },
+            
+            // SCHIPHOL/AMSTERDAM
+            { line: '300', lat: 52.3081, lng: 4.7642, status: 'active', operator: 'Connexxion' },
+            { line: '310', lat: 52.3676, lng: 4.9041, status: 'active', operator: 'Connexxion' },
+            { line: '346', lat: 52.3812, lng: 4.6332, status: 'delayed', operator: 'Connexxion' },
+            { line: '397', lat: 52.3184, lng: 4.7423, status: 'active', operator: 'Transdev' },
+            
+            // R-NET
+            { line: 'R-NET 340', lat: 52.3587, lng: 4.8686, status: 'active', operator: 'R-NET' },
+            
+            // UTRECHT
+            { line: '120', lat: 52.0907, lng: 5.1214, status: 'active', operator: 'Connexxion' },
+            { line: '127', lat: 52.1396, lng: 5.0864, status: 'active', operator: 'Connexxion' },
+            
+            // ROTTERDAM
+            { line: '430', lat: 52.0787, lng: 4.3221, status: 'active', operator: 'Connexxion' }
+        ];
 
         function initMap() {
             if (typeof L === 'undefined') {
@@ -810,30 +838,54 @@
 
             map = L.map('map', {
                 center: [52.097, 5.12],
-                zoom: 8,
-                minZoom: 7,
-                maxZoom: 18
+                zoom: 8
             });
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors',
-                maxZoom: 19
+                attribution: '© OpenStreetMap'
             }).addTo(map);
 
             busMarkers = L.layerGroup().addTo(map);
             incidentMarkers = L.layerGroup().addTo(map);
+
+            addBusMarkers();
+        }
+
+        function addBusMarkers() {
+            busMarkers.clearLayers();
+            
+            busData.forEach(bus => {
+                let iconColor = bus.status === 'stopped' ? '#e53e3e' : 
+                               bus.status === 'delayed' ? '#dd6b20' : 
+                               bus.operator === 'Connexxion' ? '#0066cc' : 
+                               bus.operator === 'Transdev' ? '#E30613' : '#38a169';
+                
+                const icon = L.divIcon({
+                    html: `<div style="background: ${iconColor}; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 9px; font-weight: bold; border: 2px solid white;">${bus.line.replace('R-NET ', '')}</div>`,
+                    iconSize: [32, 32]
+                });
+
+                const marker = L.marker([bus.lat, bus.lng], { icon })
+                    .bindPopup(`<strong>Lijn ${bus.line}</strong><br>${bus.operator}`);
+                
+                busMarkers.addLayer(marker);
+            });
         }
 
         function setView(location) {
             const views = {
-                'nederland': { center: [52.097, 5.12], zoom: 8 },
-                'amsterdam': { center: [52.3676, 4.9041], zoom: 11 },
-                'utrecht': { center: [52.0907, 5.1214], zoom: 11 },
-                'eindhoven': { center: [51.4416, 5.4697], zoom: 11 }
+                'nederland': [52.097, 5.12, 8],
+                'amsterdam': [52.3676, 4.9041, 11],
+                'noordholland': [52.7500, 4.7500, 10],
+                'rotterdam': [51.9244, 4.4777, 11],
+                'utrecht': [52.0907, 5.1214, 11],
+                'eindhoven': [51.4416, 5.4697, 11],
+                'arnhem': [51.9130, 5.9000, 10],
+                'apeldoorn': [52.1280, 5.8171, 10]
             };
             
-            if (views[location] && map) {
-                map.setView(views[location].center, views[location].zoom);
+            if (views[location]) {
+                map.setView([views[location][0], views[location][1]], views[location][2]);
             }
         }
 
@@ -851,14 +903,8 @@
             setTimeout(() => {
                 if (!diversionMap) {
                     diversionMap = L.map('diversionMap').setView([52.3676, 4.9041], 11);
-                    
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap'
-                    }).addTo(diversionMap);
-                    
-                    diversionMap.on('click', function(e) {
-                        placeDiversionBlockage(e.latlng);
-                    });
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(diversionMap);
+                    diversionMap.on('click', e => placeDiversionBlockage(e.latlng));
                 } else {
                     diversionMap.invalidateSize();
                 }
@@ -871,231 +917,95 @@
 
         function selectDiversionType(type) {
             selectedDiversionType = type;
-            
-            const loadingBtn = document.getElementById('loadingBtn');
-            const accidentBtn = document.getElementById('accidentBtn');
-            
-            if (type === 'loading') {
-                loadingBtn.style.background = '#E30613';
-                accidentBtn.style.background = '#718096';
-            } else {
-                loadingBtn.style.background = '#718096';
-                accidentBtn.style.background = '#E30613';
-            }
+            document.getElementById('loadingBtn').style.background = type === 'loading' ? '#E30613' : '#718096';
+            document.getElementById('accidentBtn').style.background = type === 'accident' ? '#E30613' : '#718096';
         }
 
         function placeDiversionBlockage(latlng) {
-            if (diversionMarker) {
-                diversionMap.removeLayer(diversionMarker);
-            }
-            
-            const icon = selectedDiversionType === 'loading' ? '🚧' : '🚗';
+            if (diversionMarker) diversionMap.removeLayer(diversionMarker);
             
             diversionMarker = L.marker(latlng, {
                 icon: L.divIcon({
-                    html: `<div style="font-size: 32px;">${icon}</div>`,
+                    html: `<div style="font-size: 32px;">${selectedDiversionType === 'loading' ? '🚧' : '🚗'}</div>`,
                     iconSize: [40, 40]
                 })
             }).addTo(diversionMap);
             
-            diversionMarker.bindPopup(
-                selectedDiversionType === 'loading' 
-                    ? 'Laden/Lossen - Blokkering' 
-                    : 'Ongeval - Weg afgesloten'
-            ).openPopup();
-            
-            document.getElementById('diversionLocation').value = 
-                `${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
+            document.getElementById('diversionLocation').value = `${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
         }
 
         function calculateDiversionRoutes() {
             if (!diversionMarker) {
-                alert('Plaats eerst een blokkering op de kaart');
+                alert('Plaats eerst een blokkering');
                 return;
             }
-            
             document.getElementById('diversionResults').style.display = 'block';
-            
-            const blockage = diversionMarker.getLatLng();
-            
-            L.polyline([
-                [52.3812, 4.6332],
-                [blockage.lat + 0.02, blockage.lng],
-                [52.3081, 4.7642]
-            ], {
-                color: '#E30613',
-                weight: 4,
-                opacity: 0.7,
-                dashArray: '10, 10'
-            }).addTo(diversionMap).bindPopup('Route A');
-            
-            L.polyline([
-                [52.3812, 4.6332],
-                [blockage.lat + 0.05, blockage.lng + 0.05],
-                [52.3081, 4.7642]
-            ], {
-                color: '#3182ce',
-                weight: 4,
-                opacity: 0.7,
-                dashArray: '10, 10'
-            }).addTo(diversionMap).bindPopup('Route B');
         }
 
-        function selectDiversionRoute(routeNum) {
-            selectedDiversionRoute = routeNum;
-            
-            document.querySelectorAll('.diversion-route-card').forEach((card, index) => {
-                if (index + 1 === routeNum) {
-                    card.classList.add('selected');
-                } else {
-                    card.classList.remove('selected');
-                }
+        function selectDiversionRoute(num) {
+            selectedDiversionRoute = num;
+            document.querySelectorAll('.diversion-route-card').forEach((c, i) => {
+                c.classList.toggle('selected', i + 1 === num);
             });
         }
 
         function deployDiversionRoute() {
-            const line = document.getElementById('diversionLine').value;
-            const duration = document.getElementById('diversionDuration').value;
-            const routeLetter = String.fromCharCode(64 + selectedDiversionRoute);
-            
-            if (confirm(
-                `Omleiding deployen?\n\n` +
-                `Lijn: ${line}\n` +
-                `Route: ${routeLetter}\n` +
-                `Duur: ${duration} min\n\n` +
-                `Chauffeurs worden direct geïnformeerd.`
-            )) {
-                alert(
-                    `✅ OMLEIDING GEACTIVEERD\n\n` +
-                    `→ Chauffeurs geïnformeerd\n` +
-                    `→ Navigatie bijgewerkt\n` +
-                    `→ RBS melding aangemaakt\n` +
-                    `→ Planning aangepast`
-                );
-                
-                closeDiversionModal();
-            }
+            alert('✅ OMLEIDING GEACTIVEERD\n\n→ Chauffeurs geïnformeerd\n→ Navigatie bijgewerkt');
+            closeDiversionModal();
         }
 
         function activatePanicButton() {
-            incomingEmergencyCall({
-                id: Date.now(),
-                line: '397',
-                driver: Math.floor(Math.random() * 900 + 100),
-                location: 'Test locatie',
-                time: new Date().toLocaleTimeString('nl-NL'),
-                type: '🔴 PANIC BUTTON - Test',
-                status: 'incoming',
-                priority: 1
-            });
+            incomingEmergencyCall();
         }
 
         function incomingEmergencyCall(data) {
             const emergency = data || {
-                id: Date.now(),
-                line: '300',
+                line: '397',
                 driver: Math.floor(Math.random() * 900 + 100),
                 location: 'GPS: 52.3676, 4.9041',
-                time: new Date().toLocaleTimeString('nl-NL'),
-                type: '🔴 NOODOPROEP',
-                status: 'incoming',
-                priority: 1
+                type: '🔴 NOODOPROEP'
             };
             
             activeEmergencies.push(emergency);
-            
-            document.getElementById('emergencyLine').textContent = `Lijn ${emergency.line}`;
-            document.getElementById('emergencyDriver').textContent = `Chauffeur #${emergency.driver}`;
+            document.getElementById('emergencyLine').textContent = emergency.line;
+            document.getElementById('emergencyDriver').textContent = emergency.driver;
             document.getElementById('emergencyLocation').textContent = emergency.location;
             document.getElementById('emergencyType').textContent = emergency.type;
-            
             document.getElementById('emergencyPopup').style.display = 'block';
             document.getElementById('emergencyCount').textContent = activeEmergencies.length;
         }
 
         function acceptEmergency() {
             document.getElementById('emergencyPopup').style.display = 'none';
-            alert('✅ NOODOPROEP AANGENOMEN\n\nDirecte spraakverbinding actief');
+            alert('✅ AANGENOMEN');
         }
 
         function escalateEmergency() {
-            alert('📞 DOORSCHAKELING NAAR 112\n\nMeldkamer gekoppeld');
+            alert('📞 DOORSCHAKELING 112');
             document.getElementById('emergencyPopup').style.display = 'none';
         }
 
-        function deployBackup() {
-            alert('Reserve voertuig wordt ingezet');
-        }
-
-        function callMechanic() {
-            alert('Monteur opgeroepen - ETA: 15 minuten');
-        }
-
-        function notifyPassengers() {
-            alert('Bericht verstuurd naar 1,250 app gebruikers');
-        }
-
-        function alertPolice() {
-            alert('Politie gealarmeerd - ETA: 8 minuten');
-        }
-
-        function toggleIncidents() {
-            if (incidentMarkers && map) {
-                if (map.hasLayer(incidentMarkers)) {
-                    map.removeLayer(incidentMarkers);
-                    document.getElementById('incidentBtn').classList.remove('active');
-                } else {
-                    incidentMarkers.addTo(map);
-                    document.getElementById('incidentBtn').classList.add('active');
-                }
-            }
-        }
-
-        function toggleBuses() {
-            if (busMarkers && map) {
-                if (map.hasLayer(busMarkers)) {
-                    map.removeLayer(busMarkers);
-                    document.getElementById('busBtn').classList.remove('active');
-                } else {
-                    busMarkers.addTo(map);
-                    document.getElementById('busBtn').classList.add('active');
-                }
-            }
-        }
-
-        function refreshData() {
-            console.log('Data refreshed');
-        }
-
-        function filterIncidents(severity) {
-            console.log('Filter:', severity);
-        }
+        function deployBackup() { alert('Reserve ingezet'); }
+        function callMechanic() { alert('Monteur onderweg'); }
+        function notifyPassengers() { alert('Bericht verstuurd'); }
+        function alertPolice() { alert('Politie gealarmeerd'); }
+        function toggleIncidents() {}
+        function toggleBuses() {}
+        function refreshData() {}
 
         function updateTime() {
-            const now = new Date();
-            document.getElementById('currentTime').textContent = 
-                now.toLocaleTimeString('nl-NL');
+            document.getElementById('currentTime').textContent = new Date().toLocaleTimeString('nl-NL');
         }
 
-        document.getElementById('rbsForm')?.addEventListener('submit', function(e) {
+        document.getElementById('rbsForm').addEventListener('submit', e => {
             e.preventDefault();
-            
-            const formData = {
-                type: document.getElementById('incidentType').value,
-                line: document.getElementById('lineNumber').value,
-                location: document.getElementById('location').value,
-                priority: document.getElementById('priority').value,
-                description: document.getElementById('description').value
-            };
-            
             closeRBSModal();
-            alert(`RBS Melding ${formData.type} succesvol aangemaakt`);
+            alert('RBS Melding aangemaakt');
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', () => {
             initMap();
             setInterval(updateTime, 1000);
-            updateTime();
         });
     </script>
 
@@ -1103,7 +1013,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 
     <script>
-        const firebaseConfig = {
+        firebase.initializeApp({
             apiKey: "AIzaSyDpGn5-OgZyZB-H68S6XQ7GvkJXePLNvc0",
             authDomain: "rbs20-7df9b.firebaseapp.com",
             databaseURL: "https://rbs20-7df9b-default-rtdb.europe-west1.firebasedatabase.app",
@@ -1111,105 +1021,66 @@
             storageBucket: "rbs20-7df9b.firebasestorage.app",
             messagingSenderId: "1074779022793",
             appId: "1:1074779022793:web:86c664561738169ff63418"
-        };
+        });
 
-        firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        console.log('✅ Firebase connected!');
 
         function initializeLiveData() {
-            console.log('🔄 Starting live data listeners...');
-            
-            database.ref('buses').on('value', (snapshot) => {
+            database.ref('buses').on('value', snapshot => {
                 const liveBuses = snapshot.val();
-                if (liveBuses) {
-                    updateLiveBuses(liveBuses);
-                    console.log('🚌 Buses updated:', Object.keys(liveBuses).length);
-                }
+                if (liveBuses) updateLiveBuses(liveBuses);
             });
             
-            database.ref('incidents').on('child_added', (snapshot) => {
-                const incident = snapshot.val();
-                addLiveIncident(incident);
-                console.log('⚠️ New incident:', incident.type);
+            database.ref('incidents').on('child_added', snapshot => {
+                addLiveIncident(snapshot.val());
             });
             
-            database.ref('emergencies').on('child_added', (snapshot) => {
+            database.ref('emergencies').on('child_added', snapshot => {
                 const emergency = snapshot.val();
                 if (emergency.timestamp > Date.now() - 60000) {
                     incomingEmergencyCall(emergency);
-                    console.log('🚨 EMERGENCY CALL!');
                 }
             });
         }
 
         function updateLiveBuses(liveBuses) {
-            if (!window.busMarkers) {
-                console.log('⏳ Map not ready yet');
-                return;
-            }
-            
+            if (!busMarkers) return;
             busMarkers.clearLayers();
             
             Object.keys(liveBuses).forEach(busId => {
                 const bus = liveBuses[busId];
-                
                 const iconColor = bus.status === 'stopped' ? '#e53e3e' : 
                                  bus.status === 'delayed' ? '#dd6b20' : '#38a169';
                 
-                const busIcon = L.divIcon({
-                    className: 'bus-marker-icon',
-                    html: `<div style="background: ${iconColor}; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 9px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">${bus.line}</div>`,
+                const icon = L.divIcon({
+                    html: `<div style="background: ${iconColor}; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 9px; font-weight: bold; border: 2px solid white;">${bus.line}</div>`,
                     iconSize: [32, 32]
                 });
                 
-                const marker = L.marker([bus.lat, bus.lng], { icon: busIcon })
-                    .bindPopup(`
-                        <div style="font-family: Arial, sans-serif;">
-                            <strong style="color: #E30613; font-size: 14px;">Lijn ${bus.line}</strong><br>
-                            <strong>Status:</strong> ${bus.status}<br>
-                            <strong>Snelheid:</strong> ${bus.speed || 0} km/u<br>
-                            <strong>Passagiers:</strong> ${bus.passengers || 0}<br>
-                            <small style="color: #666;">Live data</small>
-                        </div>
-                    `);
-                
-                busMarkers.addLayer(marker);
+                L.marker([bus.lat, bus.lng], { icon })
+                    .bindPopup(`<strong>Lijn ${bus.line}</strong><br>Snelheid: ${bus.speed || 0} km/u`)
+                    .addTo(busMarkers);
             });
         }
 
         function addLiveIncident(incident) {
-            const incidentsList = document.getElementById('incidentsList');
-            if (!incidentsList) {
-                console.log('⚠️ Incidents list not found');
-                return;
-            }
+            const list = document.getElementById('incidentsList');
+            if (!list) return;
             
-            const incidentDiv = document.createElement('div');
-            incidentDiv.className = `incident-item ${incident.priority || 'info'}`;
-            incidentDiv.style.animation = 'slideIn 0.3s ease-out';
-            incidentDiv.innerHTML = `
+            const div = document.createElement('div');
+            div.className = `incident-item ${incident.priority || 'info'}`;
+            div.innerHTML = `
                 <div class="incident-header">
                     <span class="incident-type">${incident.type}</span>
-                    <span class="incident-time" style="background: #38a169; color: white; padding: 2px 8px; border-radius: 3px; font-size: 0.75em;">🔴 LIVE</span>
+                    <span class="incident-time">LIVE</span>
                 </div>
                 <div><strong>${incident.line}</strong> - ${incident.description}</div>
-                <div style="font-size: 0.8em; color: #a0aec0; margin-top: 4px;">${incident.location}</div>
+                <div style="font-size: 0.8em; color: #a0aec0;">${incident.location}</div>
             `;
-            
-            incidentsList.insertBefore(incidentDiv, incidentsList.firstChild);
-            
-            while (incidentsList.children.length > 10) {
-                incidentsList.removeChild(incidentsList.lastChild);
-            }
+            list.insertBefore(div, list.firstChild);
         }
 
-        window.addEventListener('load', function() {
-            console.log('📱 Page loaded, waiting for map...');
-            setTimeout(() => {
-                initializeLiveData();
-            }, 2000);
-        });
+        window.addEventListener('load', () => setTimeout(initializeLiveData, 2000));
     </script>
 </body>
 </html>
