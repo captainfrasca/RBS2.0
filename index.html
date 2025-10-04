@@ -1026,9 +1026,15 @@
             
             try {
                 const weatherPromises = cities.map(city => 
-                    fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${city.lat}&lon=${city.lng}&appid=${WEATHER_API_KEY}&units=metric&lang=nl`)
-                        .then(r => r.json())
+                    fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${city.lat}&lon=${city.lng}&appid=${WEATHER_API_KEY}&units=metric&lang=nl`, {
+                        mode: 'cors'
+                    })
+                        .then(r => {
+                            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                            return r.json();
+                        })
                         .then(data => ({ name: city.name, data }))
+                        .catch(err => ({ name: city.name, error: err }))
                 );
                 
                 const results = await Promise.all(weatherPromises);
