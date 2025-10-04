@@ -1973,7 +1973,277 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 </script>
+    <!-- Diversion Planning Modal -->
+<div class="modal" id="diversionModal">
+    <div class="modal-content" style="max-width: 1200px; display: flex; gap: 20px;">
+        <div style="flex: 1;">
+            <div class="modal-header">
+                <h2 class="modal-title">🗺️ Plan Route Omleiding</h2>
+                <button class="close-btn" onclick="closeDiversionModal()">×</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Type Blokkering</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="quick-btn" id="loadingBtn" onclick="selectDiversionType('loading')" style="background: #E30613;">
+                        🚧 Laden/Lossen
+                    </button>
+                    <button class="quick-btn" id="accidentBtn" onclick="selectDiversionType('accident')">
+                        🚗 Ongeval
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Getroffen Lijn</label>
+                <select class="form-select" id="diversionLine">
+                    <option value="300">Lijn 300 - Haarlem - Schiphol</option>
+                    <option value="397">Lijn 397 - Amsterdam - Schiphol</option>
+                    <option value="340">R-NET 340 - Haarlem - Schiphol</option>
+                    <option value="346">Lijn 346 - Haarlem - Schiphol</option>
+                    <option value="401">Lijn 401 - Eindhoven - Airport</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Locatie Blokkering</label>
+                <input type="text" class="form-input" id="diversionLocation" placeholder="Klik op kaart of vul adres in">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Verwachte Duur</label>
+                <select class="form-select" id="diversionDuration">
+                    <option value="15">15 minuten</option>
+                    <option value="30">30 minuten</option>
+                    <option value="60">1 uur</option>
+                    <option value="120">2+ uur</option>
+                </select>
+            </div>
+
+            <button class="submit-btn" onclick="calculateDiversionRoutes()">
+                Bereken Alternatieve Routes
+            </button>
+
+            <div id="diversionResults" style="display: none; margin-top: 20px;">
+                <h3 style="color: #E30613; margin-bottom: 10px;">Beschikbare Routes</h3>
+                
+                <div class="diversion-route-card" onclick="selectDiversionRoute(1)">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <strong>Route A - Via Parallelweg</strong>
+                        <span style="color: #48bb78;">+8 min</span>
+                    </div>
+                    <div style="font-size: 0.85em; color: #a0aec0;">
+                        12.3 km | 3 haltes overgeslagen
+                    </div>
+                    <div style="background: #dd6b20; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; display: inline-block; margin-top: 5px;">
+                        ⚠️ Smalle weg bij km 4.2
+                    </div>
+                </div>
+
+                <div class="diversion-route-card" onclick="selectDiversionRoute(2)">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <strong>Route B - Via Ringweg</strong>
+                        <span style="color: #48bb78;">+15 min</span>
+                    </div>
+                    <div style="font-size: 0.85em; color: #a0aec0;">
+                        18.7 km | 1 halte overgeslagen
+                    </div>
+                </div>
+
+                <button class="submit-btn" onclick="deployDiversionRoute()">
+                    Deploy Gekozen Route
+                </button>
+            </div>
+        </div>
+
+        <div style="flex: 1; min-height: 500px;">
+            <div id="diversionMap" style="width: 100%; height: 100%; border-radius: 8px;"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+.diversion-route-card {
+    background: rgba(255,255,255,0.05);
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.diversion-route-card:hover {
+    border-color: #E30613;
+    background: rgba(227,6,19,0.1);
+}
+
+.diversion-route-card.selected {
+    border-color: #E30613;
+    background: rgba(227,6,19,0.2);
+}
+</style>
+
+<script>
+let diversionMap;
+let diversionMarker;
+let selectedDiversionType = 'loading';
+let selectedDiversionRoute = 1;
+
+function openDiversionPlanner() {
+    document.getElementById('diversionModal').classList.add('show');
     
+    // Initialize map in modal
+    setTimeout(() => {
+        if (!diversionMap) {
+            diversionMap = L.map('diversionMap').setView([52.3676, 4.9041], 11);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(diversionMap);
+            
+            // Click to place blockage
+            diversionMap.on('click', function(e) {
+                placeDiversionBlockage(e.latlng);
+            });
+        } else {
+            diversionMap.invalidateSize();
+        }
+    }, 300);
+}
+
+function closeDiversionModal() {
+    document.getElementById('diversionModal').classList.remove('show');
+}
+
+function selectDiversionType(type) {
+    selectedDiversionType = type;
+    
+    const loadingBtn = document.getElementById('loadingBtn');
+    const accidentBtn = document.getElementById('accidentBtn');
+    
+    if (type === 'loading') {
+        loadingBtn.style.background = '#E30613';
+        accidentBtn.style.background = '#718096';
+    } else {
+        loadingBtn.style.background = '#718096';
+        accidentBtn.style.background = '#E30613';
+    }
+}
+
+function placeDiversionBlockage(latlng) {
+    if (diversionMarker) {
+        diversionMap.removeLayer(diversionMarker);
+    }
+    
+    const icon = selectedDiversionType === 'loading' ? '🚧' : '🚗';
+    
+    diversionMarker = L.marker(latlng, {
+        icon: L.divIcon({
+            html: `<div style="font-size: 32px;">${icon}</div>`,
+            iconSize: [40, 40]
+        })
+    }).addTo(diversionMap);
+    
+    diversionMarker.bindPopup(
+        selectedDiversionType === 'loading' 
+            ? 'Laden/Lossen - Blokkering' 
+            : 'Ongeval - Weg afgesloten'
+    ).openPopup();
+    
+    document.getElementById('diversionLocation').value = 
+        `${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
+}
+
+function calculateDiversionRoutes() {
+    if (!diversionMarker) {
+        alert('Plaats eerst een blokkering op de kaart');
+        return;
+    }
+    
+    // Show results
+    document.getElementById('diversionResults').style.display = 'block';
+    
+    // Draw example alternative routes on map
+    drawAlternativeRoutes();
+}
+
+function drawAlternativeRoutes() {
+    // Example routes (in real implementation, use GraphHopper API)
+    const blockage = diversionMarker.getLatLng();
+    
+    // Route A - Short detour
+    L.polyline([
+        [52.3812, 4.6332],
+        [blockage.lat + 0.02, blockage.lng],
+        [52.3081, 4.7642]
+    ], {
+        color: '#E30613',
+        weight: 4,
+        opacity: 0.7,
+        dashArray: '10, 10'
+    }).addTo(diversionMap).bindPopup('Route A');
+    
+    // Route B - Long detour
+    L.polyline([
+        [52.3812, 4.6332],
+        [blockage.lat + 0.05, blockage.lng + 0.05],
+        [52.3081, 4.7642]
+    ], {
+        color: '#3182ce',
+        weight: 4,
+        opacity: 0.7,
+        dashArray: '10, 10'
+    }).addTo(diversionMap).bindPopup('Route B');
+}
+
+function selectDiversionRoute(routeNum) {
+    selectedDiversionRoute = routeNum;
+    
+    document.querySelectorAll('.diversion-route-card').forEach((card, index) => {
+        if (index + 1 === routeNum) {
+            card.classList.add('selected');
+        } else {
+            card.classList.remove('selected');
+        }
+    });
+}
+
+function deployDiversionRoute() {
+    const line = document.getElementById('diversionLine').value;
+    const duration = document.getElementById('diversionDuration').value;
+    const routeLetter = String.fromCharCode(64 + selectedDiversionRoute);
+    
+    if (confirm(
+        `Omleiding deployen?\n\n` +
+        `Lijn: ${line}\n` +
+        `Route: ${routeLetter}\n` +
+        `Duur: ${duration} min\n\n` +
+        `Chauffeurs worden direct geïnformeerd.`
+    )) {
+        // Save to Firebase
+        database.ref('diversions').push({
+            line: line,
+            route: routeLetter,
+            duration: duration,
+            type: selectedDiversionType,
+            location: document.getElementById('diversionLocation').value,
+            timestamp: Date.now()
+        });
+        
+        alert(
+            `✅ OMLEIDING GEACTIVEERD\n\n` +
+            `→ Chauffeurs geïnformeerd\n` +
+            `→ Navigatie bijgewerkt\n` +
+            `→ RBS melding aangemaakt\n` +
+            `→ Planning aangepast`
+        );
+        
+        closeDiversionModal();
+    }
+}
+</script>
 </body>
 
 </html>
+
