@@ -524,6 +524,16 @@
             </div>
 
             <div class="sidebar-section">
+                <div class="sidebar-section-title">🌤️ WEER & VERKEER</div>
+                <div id="weatherData">
+                    <div style="font-size: 0.75em; color: #718096;">Loading...</div>
+                </div>
+                <div id="trafficData" style="margin-top: 10px;">
+                    <div style="font-size: 0.75em; color: #718096;">Verkeer laden...</div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
                 <div class="sidebar-section-title">REGIO'S</div>
                 <div class="menu-item active" onclick="setView('nederland')">
                     <span>🗺️</span>
@@ -1003,9 +1013,97 @@
             alert('RBS Melding aangemaakt');
         });
 
+        // Weather API
+        const WEATHER_API_KEY = 'ed9e53099b7703acb3992636be6c04e1';
+        
+        async function updateWeather() {
+            const cities = [
+                { name: 'Amsterdam', lat: 52.3676, lng: 4.9041 },
+                { name: 'Rotterdam', lat: 51.9244, lng: 4.4777 },
+                { name: 'Utrecht', lat: 52.0907, lng: 5.1214 },
+                { name: 'Eindhoven', lat: 51.4416, lng: 5.4697 }
+            ];
+            
+            try {
+                const weatherPromises = cities.map(city => 
+                    fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${city.lat}&lon=${city.lng}&appid=${WEATHER_API_KEY}&units=metric&lang=nl`)
+                        .then(r => r.json())
+                        .then(data => ({ name: city.name, data }))
+                );
+                
+                const results = await Promise.all(weatherPromises);
+                
+                let weatherHTML = '';
+                results.forEach(({ name, data }) => {
+                    const temp = Math.round(data.main.temp);
+                    const wind = Math.round(data.wind.speed * 3.6);
+                    const icon = getWeatherIcon(data.weather[0].main);
+                    const alert = temp < 0 || wind > 50 ? '⚠️' : '';
+                    
+                    weatherHTML += `
+                        <div class="status-item" style="font-size: 0.75em;">
+                            <span>${icon} ${name}</span>
+                            <span style="color: ${temp < 0 ? '#e53e3e' : '#48bb78'};">${alert} ${temp}°C ${wind}km/h</span>
+                        </div>
+                    `;
+                });
+                
+                document.getElementById('weatherData').innerHTML = weatherHTML;
+                
+            } catch (error) {
+                console.error('Weather error:', error);
+                document.getElementById('weatherData').innerHTML = '<div style="font-size: 0.75em; color: #e53e3e;">Weer fout</div>';
+            }
+        }
+        
+        function getWeatherIcon(condition) {
+            const icons = {
+                'Clear': '☀️',
+                'Clouds': '☁️',
+                'Rain': '🌧️',
+                'Drizzle': '🌦️',
+                'Thunderstorm': '⛈️',
+                'Snow': '❄️',
+                'Mist': '🌫️',
+                'Fog': '🌫️'
+            };
+            return icons[condition] || '🌤️';
+        }
+        
+        // Traffic data simulation (NDW would require backend)
+        function updateTraffic() {
+            const highways = [
+                { name: 'A2', status: 'heavy', delay: 15 },
+                { name: 'A9', status: 'normal', delay: 0 },
+                { name: 'A4', status: 'slow', delay: 8 },
+                { name: 'A12', status: 'normal', delay: 0 }
+            ];
+            
+            let trafficHTML = '<div style="font-size: 0.7em; margin-bottom: 5px; color: #718096;">SNELWEGEN</div>';
+            highways.forEach(hw => {
+                const color = hw.status === 'heavy' ? '#e53e3e' : 
+                             hw.status === 'slow' ? '#f6ad55' : '#48bb78';
+                const icon = hw.status === 'heavy' ? '🔴' : 
+                            hw.status === 'slow' ? '🟠' : '🟢';
+                
+                trafficHTML += `
+                    <div class="status-item" style="font-size: 0.75em;">
+                        <span>${icon} ${hw.name}</span>
+                        <span style="color: ${color};">${hw.delay > 0 ? '+' + hw.delay + ' min' : 'Normaal'}</span>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('trafficData').innerHTML = trafficHTML;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             initMap();
             setInterval(updateTime, 1000);
+            updateWeather();
+            updateTraffic();
+            setInterval(updateWeather, 600000); // Update weather every 10 min
+            setInterval(updateTraffic, 120000); // Update traffic every 2 min
         });
     </script>
 
