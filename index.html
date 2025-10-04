@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transdev Nederland - RBS Command Center met OpenStreetMap</title>
+    <title>Transdev RBS 2.0 Command Center</title>
     
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     
     <style>
@@ -25,7 +24,6 @@
             flex-direction: column;
         }
 
-        /* Header */
         .header {
             background: linear-gradient(135deg, #1a1f2e 0%, #2d3748 100%);
             padding: 8px 20px;
@@ -75,7 +73,6 @@
         .stat-badge.ok { background: #38a169; }
         .stat-badge.info { background: #3182ce; }
 
-        /* Weather Alert Bar */
         .alert-bar {
             background: linear-gradient(90deg, #e53e3e, #c53030);
             padding: 6px 20px;
@@ -101,7 +98,6 @@
             font-size: 0.9em;
         }
 
-        /* Main Container */
         .main-container {
             flex: 1;
             display: grid;
@@ -111,7 +107,6 @@
             overflow: hidden;
         }
 
-        /* Sidebar */
         .sidebar {
             background: #1a202c;
             border-radius: 8px;
@@ -182,7 +177,6 @@
         .status-count.medium { background: #f6ad55; }
         .status-count.low { background: #38a169; }
 
-        /* Map Container */
         .map-container {
             background: #1a202c;
             border-radius: 8px;
@@ -196,7 +190,6 @@
             border-radius: 8px;
         }
 
-        /* Map overlays */
         .map-overlay-controls {
             position: absolute;
             top: 10px;
@@ -253,7 +246,6 @@
             50% { opacity: 0.4; }
         }
 
-        /* Right Panel - RBS Meldingen */
         .right-panel {
             display: flex;
             flex-direction: column;
@@ -287,7 +279,6 @@
             font-size: 0.9em;
         }
 
-        /* RBS Incident Form Modal */
         .modal {
             display: none;
             position: fixed;
@@ -358,24 +349,6 @@
             color: white;
         }
 
-        .checkbox-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            padding: 8px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 4px;
-        }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.85em;
-        }
-
         .submit-btn {
             background: #E30613;
             color: white;
@@ -392,7 +365,6 @@
             background: #cc0510;
         }
 
-        /* Incident items */
         .incident-item {
             background: rgba(255,255,255,0.05);
             border-radius: 6px;
@@ -412,7 +384,6 @@
         .incident-item.critical { border-left-color: #e53e3e; }
         .incident-item.warning { border-left-color: #f6ad55; }
         .incident-item.info { border-left-color: #3182ce; }
-        .incident-item.success { border-left-color: #38a169; }
 
         .incident-header {
             display: flex;
@@ -430,19 +401,6 @@
             font-size: 0.9em;
         }
 
-        /* Custom Leaflet popup styles */
-        .leaflet-popup-content-wrapper {
-            background: rgba(26, 32, 44, 0.95);
-            color: white;
-            border: 1px solid #E30613;
-            border-radius: 8px;
-        }
-
-        .leaflet-popup-tip {
-            background: rgba(26, 32, 44, 0.95);
-        }
-
-        /* Quick action buttons */
         .quick-actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -466,22 +424,65 @@
             background: rgba(227,6,19,0.3);
             border-color: #E30613;
         }
+
+        .emergency-button {
+            background: #e53e3e !important;
+            color: white !important;
+            border: 2px solid white !important;
+            animation: emergencyBlink 2s infinite;
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(229,62,62,0.8);
+        }
+        
+        @keyframes emergencyBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .diversion-route-card {
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .diversion-route-card:hover {
+            border-color: #E30613;
+            background: rgba(227,6,19,0.1);
+        }
+
+        .diversion-route-card.selected {
+            border-color: #E30613;
+            background: rgba(227,6,19,0.2);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
     </style>
 </head>
 <body>
-    <!-- Emergency Alert Bar -->
     <div class="alert-bar" id="alertBar">
         <div class="alert-content">
             <span>⚠️ VERSTORING</span>
-            <span id="alertText">3 Ritten uitgevallen - A2 volledig gestremd - Code Rood Noord-Holland</span>
+            <span id="alertText">3 Ritten uitgevallen - A2 volledig gestremd</span>
         </div>
         <div style="font-size: 0.85em;">
             <span id="alertTime">Update: 2 min geleden</span>
         </div>
     </div>
 
-    <!-- Emergency SOS Popup (initially hidden) -->
-    <div id="emergencyPopup" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #e53e3e; color: white; padding: 30px; border-radius: 10px; z-index: 9999; box-shadow: 0 10px 40px rgba(0,0,0,0.8); animation: emergencyPulse 1s infinite;">
+    <div id="emergencyPopup" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #e53e3e; color: white; padding: 30px; border-radius: 10px; z-index: 9999; box-shadow: 0 10px 40px rgba(0,0,0,0.8);">
         <h2 style="margin: 0 0 20px 0;">🚨 NOODOPROEP ACTIEF</h2>
         <div id="emergencyDetails" style="margin-bottom: 20px;">
             <div style="font-size: 1.2em; margin-bottom: 10px;">Lijn: <span id="emergencyLine">--</span></div>
@@ -499,48 +500,9 @@
         </div>
     </div>
 
-    <style>
-        @keyframes emergencyPulse {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); }
-            50% { transform: translate(-50%, -50%) scale(1.02); }
-        }
-        
-        .emergency-button {
-            background: #e53e3e !important;
-            color: white !important;
-            border: 2px solid white !important;
-            animation: emergencyBlink 2s infinite;
-            font-weight: bold;
-            box-shadow: 0 0 20px rgba(229,62,62,0.8);
-        }
-        
-        @keyframes emergencyBlink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-        
-        .panic-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(229,62,62,0.2);
-            z-index: 9998;
-            pointer-events: none;
-            animation: panicFlash 1s infinite;
-        }
-        
-        @keyframes panicFlash {
-            0%, 100% { opacity: 0; }
-            50% { opacity: 0.3; }
-        }
-    </style>
-
-    <!-- Header -->
     <div class="header">
         <div class="logo">
-            <div class="system-title">🚌 TRANSDEV RBS COMMAND CENTER</div>
+            <div class="system-title">🚌 TRANSDEV RBS 2.0 COMMAND CENTER</div>
         </div>
         
         <div class="header-stats">
@@ -572,51 +534,20 @@
         </div>
     </div>
 
-    <!-- Main Container -->
     <div class="main-container">
-        <!-- Sidebar -->
         <div class="sidebar">
-            <!-- Belangrijke Status - Operator Statistics -->
             <div class="sidebar-section">
                 <div class="sidebar-section-title">🚌 VLOOT STATUS</div>
                 <div class="status-item" style="background: rgba(0,102,204,0.1);">
                     <span style="color: #0066cc;">Connexxion</span>
                     <span class="status-count" style="background: #0066cc;">186</span>
                 </div>
-                <div class="status-item" style="background: rgba(0,160,230,0.1);">
-                    <span style="color: #00a0e6;">R-NET</span>
-                    <span class="status-count" style="background: #00a0e6;">42</span>
-                </div>
                 <div class="status-item" style="background: rgba(227,6,19,0.1);">
                     <span style="color: #E30613;">Transdev</span>
                     <span class="status-count" style="background: #E30613;">89</span>
                 </div>
-                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
-                    <div class="sidebar-section-title">⚠️ VERSTORINGEN</div>
-                    <div class="status-item">
-                        <span>Rituitval</span>
-                        <span class="status-count high">3</span>
-                    </div>
-                    <div class="status-item">
-                        <span>Ongeval</span>
-                        <span class="status-count high">2</span>
-                    </div>
-                    <div class="status-item">
-                        <span>Defect Voertuig</span>
-                        <span class="status-count medium">5</span>
-                    </div>
-                    <div class="status-item">
-                        <span>Personeelstekort</span>
-                        <span class="status-count medium">4</span>
-                    </div>
-                    <div class="status-item">
-                        <span>Vertraging >10min</span>
-                        <span class="status-count medium">12</span>
-                    </div>
-                </div>
             </div>
 
-            <!-- Navigation - Updated with all regions -->
             <div class="sidebar-section">
                 <div class="sidebar-section-title">REGIO'S</div>
                 <div class="menu-item active" onclick="setView('nederland')">
@@ -627,14 +558,6 @@
                     <span>🏙️</span>
                     <span>Amsterdam/Schiphol</span>
                 </div>
-                <div class="menu-item" onclick="setView('noordholland')">
-                    <span>🏙️</span>
-                    <span>Noord-Holland Noord</span>
-                </div>
-                <div class="menu-item" onclick="setView('rotterdam')">
-                    <span>🏙️</span>
-                    <span>Rotterdam/Den Haag</span>
-                </div>
                 <div class="menu-item" onclick="setView('utrecht')">
                     <span>🏙️</span>
                     <span>Utrecht</span>
@@ -643,41 +566,26 @@
                     <span>🏙️</span>
                     <span>Eindhoven</span>
                 </div>
-                <div class="menu-item" onclick="setView('arnhem')">
-                    <span>🏙️</span>
-                    <span>Arnhem/Nijmegen</span>
-                </div>
-                <div class="menu-item" onclick="setView('apeldoorn')">
-                    <span>🏙️</span>
-                    <span>Apeldoorn/Ede</span>
-                </div>
             </div>
 
-            <!-- Quick Actions - Updated with Emergency -->
             <div class="sidebar-section">
                 <div class="sidebar-section-title">🚨 NOODOPROEPEN</div>
                 <button class="quick-btn emergency-button" onclick="activatePanicButton()" style="width: 100%; margin-bottom: 10px; padding: 15px;">
                     🆘 PANIC BUTTON
                 </button>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px;">
-                    <button class="quick-btn" onclick="testEmergency()" style="background: #f6ad55;">🔔 Test Alarm</button>
-                    <button class="quick-btn" onclick="silentAlarm()" style="background: #805ad5;">🔇 Stil Alarm</button>
-                </div>
                 <div class="status-item" style="background: rgba(229,62,62,0.1);">
                     <span>Actieve Noodoproepen</span>
                     <span class="status-count high" id="emergencyCount">0</span>
                 </div>
-                <div class="status-item">
-                    <span>Response tijd</span>
-                    <span style="font-weight: bold; color: #48bb78;">< 30s</span>
-                </div>
             </div>
 
-            <!-- Quick Actions - Original -->
             <div class="sidebar-section">
                 <div class="sidebar-section-title">ACTIES</div>
-                <button class="quick-btn" onclick="openRBSModal()" style="width: 100%; background: #E30613;">
+                <button class="quick-btn" onclick="openRBSModal()" style="width: 100%; background: #E30613; margin-bottom: 8px;">
                     ➕ Nieuwe RBS Melding
+                </button>
+                <button class="quick-btn" onclick="openDiversionPlanner()" style="width: 100%; background: #805ad5; margin-bottom: 8px;">
+                    🗺️ Plan Omleiding
                 </button>
                 <div class="quick-actions">
                     <button class="quick-btn" onclick="deployBackup()">🚌 Reserve</button>
@@ -688,7 +596,6 @@
             </div>
         </div>
 
-        <!-- Map Container -->
         <div class="map-container">
             <div class="live-indicator">
                 <div class="live-dot"></div>
@@ -697,7 +604,6 @@
             
             <div class="map-overlay-controls">
                 <button class="overlay-btn active" id="incidentBtn" onclick="toggleIncidents()">🚨 Incidenten</button>
-                <button class="overlay-btn" id="trafficBtn" onclick="toggleTraffic()">🚦 Verkeer</button>
                 <button class="overlay-btn active" id="busBtn" onclick="toggleBuses()">🚌 Voertuigen</button>
                 <button class="overlay-btn" onclick="refreshData()">🔄 Refresh</button>
             </div>
@@ -705,26 +611,14 @@
             <div id="map"></div>
         </div>
 
-        <!-- Right Panel - RBS Meldingen -->
         <div class="right-panel">
-            <!-- Filter Tabs -->
-            <div class="panel" style="padding: 8px;">
-                <div style="display: flex; gap: 5px;">
-                    <button class="quick-btn" onclick="filterByType('all')" style="flex: 1;">Alle</button>
-                    <button class="quick-btn" onclick="filterByType('rituitval')" style="flex: 1;">Rituitval</button>
-                    <button class="quick-btn" onclick="filterByType('ongeval')" style="flex: 1;">Ongeval</button>
-                    <button class="quick-btn" onclick="filterByType('storing')" style="flex: 1;">Storing</button>
-                </div>
-            </div>
-
-            <!-- Active RBS Incidents -->
             <div class="panel" style="flex: 1; overflow-y: auto;">
                 <div class="panel-header">
                     <div class="panel-title">
                         <span>📋</span>
                         <span>RBS Meldingen</span>
                     </div>
-                    <span style="color: #e53e3e; font-size: 0.8em;">46 actief</span>
+                    <span style="color: #e53e3e; font-size: 0.8em;">Live</span>
                 </div>
                 <div id="incidentsList">
                     <div class="incident-item critical">
@@ -736,15 +630,6 @@
                         <div style="font-size: 0.8em; color: #a0aec0;">Schiphol Plaza - 42 reizigers wachten</div>
                     </div>
 
-                    <div class="incident-item critical">
-                        <div class="incident-header">
-                            <span class="incident-type">ONGEVAL (OS)</span>
-                            <span class="incident-time">10:48</span>
-                        </div>
-                        <div><strong>Lijn 300</strong> - Aanrijding A9</div>
-                        <div style="font-size: 0.8em; color: #a0aec0;">Haarlem - Politie ter plaatse</div>
-                    </div>
-
                     <div class="incident-item warning">
                         <div class="incident-header">
                             <span class="incident-type">DEFECT (VD)</span>
@@ -752,15 +637,6 @@
                         </div>
                         <div><strong>Bus 8234</strong> - Motor storing</div>
                         <div style="font-size: 0.8em; color: #a0aec0;">Lijn 81 - Monteur onderweg</div>
-                    </div>
-
-                    <div class="incident-item warning">
-                        <div class="incident-header">
-                            <span class="incident-type">VERTRAGING (VT)</span>
-                            <span class="incident-time">10:42</span>
-                        </div>
-                        <div><strong>Lijn 346</strong> - 15min vertraagd</div>
-                        <div style="font-size: 0.8em; color: #a0aec0;">A2 file - Omleiding actief</div>
                     </div>
 
                     <div class="incident-item info">
@@ -771,39 +647,11 @@
                         <div><strong>Lijn 23</strong> - Route aangepast</div>
                         <div style="font-size: 0.8em; color: #a0aec0;">Den Haag CS - Wegwerkzaamheden</div>
                     </div>
-
-                    <div class="incident-item warning">
-                        <div class="incident-header">
-                            <span class="incident-type">PERSONEEL (PM)</span>
-                            <span class="incident-time">10:35</span>
-                        </div>
-                        <div><strong>Depot Utrecht</strong> - 3 chauffeurs ziek</div>
-                        <div style="font-size: 0.8em; color: #a0aec0;">Reserve opgeroepen</div>
-                    </div>
-
-                    <div class="incident-item critical">
-                        <div class="incident-header">
-                            <span class="incident-type">INCIDENT (IN)</span>
-                            <span class="incident-time">10:32</span>
-                        </div>
-                        <div><strong>Lijn 44</strong> - Agressieve reiziger</div>
-                        <div style="font-size: 0.8em; color: #a0aec0;">Rotterdam CS - Politie opgeroepen</div>
-                    </div>
-
-                    <div class="incident-item info">
-                        <div class="incident-header">
-                            <span class="incident-type">TRAMSTORING (TV)</span>
-                            <span class="incident-time">10:28</span>
-                        </div>
-                        <div><strong>Tramlijn 5</strong> - Wisselstoring</div>
-                        <div style="font-size: 0.8em; color: #a0aec0;">Amsterdam CS - Bus vervanging</div>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- RBS Melding Modal -->
     <div class="modal" id="rbsModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -813,115 +661,40 @@
             
             <form id="rbsForm">
                 <div class="form-group">
-                    <label class="form-label">Type Melding *</label>
-                    <select class="form-select" id="incidentType" required onchange="updateIncidentForm(this.value)">
+                    <label class="form-label">Type Melding</label>
+                    <select class="form-select" id="incidentType" required>
                         <option value="">-- Selecteer Type --</option>
-                        <optgroup label="Bus & Voertuig">
-                            <option value="AB">Andere Bus (AB)</option>
-                            <option value="AR">Aanrijding/Ongeval (AR)</option>
-                            <option value="BV">Bereidbaarheid Verstoringen (BV)</option>
-                            <option value="TBS">Bevuiling TBS (BV)</option>
-                            <option value="DR">DRIS Systemen (DR)</option>
-                            <option value="DU">Dienstuitvoering (DU)</option>
-                        </optgroup>
-                        <optgroup label="Operationeel">
-                            <option value="GB">Gebouwen (GB)</option>
-                            <option value="GV">Gevonden / Verloren voorwerpen (GV)</option>
-                            <option value="IN">Incident Periferie (Infoxx/Vidibus enz.) (IN)</option>
-                            <option value="IS">Infrastructuur verstoringen (IS)</option>
-                        </optgroup>
-                        <optgroup label="Communicatie & Planning">
-                            <option value="MC">Milieu calamiteiten (MC)</option>
-                            <option value="NT">Noodoproep test (NT)</option>
-                            <option value="OM">Omleidingen (OM)</option>
-                            <option value="OP">Oplaad apparaat, AHM's en AVM's (OP)</option>
-                            <option value="OS">Onveilige situatie (OS)</option>
-                            <option value="PB">Plaatsbewijzen (PB)</option>
-                            <option value="PM">Personele Mutatie (PM)</option>
-                        </optgroup>
-                        <optgroup label="Registratie & Rit">
-                            <option value="RE">Registratie reserve personeel (RE)</option>
-                            <option value="RG">Rit wel gereden (RG)</option>
-                            <option value="R1">ROV Intern (R1)</option>
-                            <option value="RM">Regiomanager meldingen (RM)</option>
-                            <option value="RV">Rit vervallen (RV)</option>
-                        </optgroup>
-                        <optgroup label="Sociale & Veiligheid">
-                            <option value="SI">Sociale Veiligheid Incidenten (SI)</option>
-                            <option value="SP">SOC probleem (SP)</option>
-                            <option value="SV">Schademelding voertuig (SV)</option>
-                            <option value="TL">Te laat meldingen (TL)</option>
-                        </optgroup>
-                        <optgroup label="Verstoringen">
-                            <option value="TK">Trolley verstoringen (TK)</option>
-                            <option value="TV">Tramverstoringen (TV)</option>
-                            <option value="VD">Voertuig Defect (VD)</option>
-                            <option value="NL">Treinverstoring (NL)</option>
-                            <option value="VR">Voertuig Ruiling (VR)</option>
-                            <option value="VT">Vertragingsmelding (VT)</option>
-                            <option value="VV">Voertuig Vol (VV)</option>
-                            <option value="ZM">Ziek- en Herstelmelding personeel (ZM)</option>
-                        </optgroup>
+                        <option value="R1">Rituitval (R1)</option>
+                        <option value="VD">Voertuig Defect (VD)</option>
+                        <option value="AR">Aanrijding/Ongeval (AR)</option>
+                        <option value="VT">Vertragingsmelding (VT)</option>
+                        <option value="PM">Personele Mutatie (PM)</option>
+                        <option value="OM">Omleidingen (OM)</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Lijn/Voertuig *</label>
-                    <input type="text" class="form-input" id="lineNumber" placeholder="Bijv: 397, R-NET 340, Bus 8234" required>
+                    <label class="form-label">Lijn/Voertuig</label>
+                    <input type="text" class="form-input" id="lineNumber" placeholder="Bijv: 397, Bus 8234" required>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Locatie *</label>
-                    <input type="text" class="form-input" id="location" placeholder="Bijv: Schiphol Plaza, A2 km 45.2, Halte Centraal Station" required>
+                    <label class="form-label">Locatie</label>
+                    <input type="text" class="form-input" id="location" placeholder="Bijv: Schiphol Plaza" required>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Prioriteit *</label>
+                    <label class="form-label">Prioriteit</label>
                     <select class="form-select" id="priority" required>
-                        <option value="critical">🔴 Kritiek - Direct actie vereist</option>
-                        <option value="high">🟠 Hoog - Binnen 15 min</option>
-                        <option value="medium">🟡 Medium - Binnen 1 uur</option>
-                        <option value="low">🟢 Laag - Vandaag oplossen</option>
+                        <option value="critical">🔴 Kritiek</option>
+                        <option value="warning">🟠 Hoog</option>
+                        <option value="info">🟢 Laag</option>
                     </select>
                 </div>
 
-                <div class="form-group" id="additionalFields">
-                    <!-- Dynamic fields based on incident type -->
-                </div>
-
                 <div class="form-group">
-                    <label class="form-label">Omschrijving *</label>
-                    <textarea class="form-input" id="description" rows="3" placeholder="Geef een duidelijke omschrijving van de situatie..." required></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Betrokken Partijen</label>
-                    <div class="checkbox-grid">
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="police"> <label for="police">Politie</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="ambulance"> <label for="ambulance">Ambulance</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="fire"> <label for="fire">Brandweer</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="mechanic"> <label for="mechanic">Monteur</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="cleaning"> <label for="cleaning">Schoonmaak</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="backup"> <label for="backup">Reserve Bus</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="management"> <label for="management">Management</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="media"> <label for="media">Pers/Media</label>
-                        </div>
-                    </div>
+                    <label class="form-label">Omschrijving</label>
+                    <textarea class="form-input" id="description" rows="3" placeholder="Beschrijf de situatie..." required></textarea>
                 </div>
 
                 <button type="submit" class="submit-btn">📋 RBS Melding Aanmaken</button>
@@ -929,166 +702,106 @@
         </div>
     </div>
 
-    <!-- Leaflet JS -->
+    <div class="modal" id="diversionModal">
+        <div class="modal-content" style="max-width: 1200px; display: flex; gap: 20px;">
+            <div style="flex: 1;">
+                <div class="modal-header">
+                    <h2 class="modal-title">🗺️ Plan Route Omleiding</h2>
+                    <button class="close-btn" onclick="closeDiversionModal()">×</button>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Type Blokkering</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button type="button" class="quick-btn" id="loadingBtn" onclick="selectDiversionType('loading')" style="background: #E30613;">
+                            🚧 Laden/Lossen
+                        </button>
+                        <button type="button" class="quick-btn" id="accidentBtn" onclick="selectDiversionType('accident')">
+                            🚗 Ongeval
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Getroffen Lijn</label>
+                    <select class="form-select" id="diversionLine">
+                        <option value="300">Lijn 300 - Haarlem - Schiphol</option>
+                        <option value="397">Lijn 397 - Amsterdam - Schiphol</option>
+                        <option value="340">R-NET 340 - Haarlem - Schiphol</option>
+                        <option value="346">Lijn 346 - Haarlem - Schiphol</option>
+                        <option value="401">Lijn 401 - Eindhoven - Airport</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Locatie Blokkering</label>
+                    <input type="text" class="form-input" id="diversionLocation" placeholder="Klik op kaart of vul adres in">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Verwachte Duur</label>
+                    <select class="form-select" id="diversionDuration">
+                        <option value="15">15 minuten</option>
+                        <option value="30">30 minuten</option>
+                        <option value="60">1 uur</option>
+                        <option value="120">2+ uur</option>
+                    </select>
+                </div>
+
+                <button type="button" class="submit-btn" onclick="calculateDiversionRoutes()">
+                    Bereken Alternatieve Routes
+                </button>
+
+                <div id="diversionResults" style="display: none; margin-top: 20px;">
+                    <h3 style="color: #E30613; margin-bottom: 10px;">Beschikbare Routes</h3>
+                    
+                    <div class="diversion-route-card selected" onclick="selectDiversionRoute(1)">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <strong>Route A - Via Parallelweg</strong>
+                            <span style="color: #48bb78;">+8 min</span>
+                        </div>
+                        <div style="font-size: 0.85em; color: #a0aec0;">
+                            12.3 km | 3 haltes overgeslagen
+                        </div>
+                        <div style="background: #dd6b20; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; display: inline-block; margin-top: 5px;">
+                            ⚠️ Smalle weg bij km 4.2
+                        </div>
+                    </div>
+
+                    <div class="diversion-route-card" onclick="selectDiversionRoute(2)">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <strong>Route B - Via Ringweg</strong>
+                            <span style="color: #48bb78;">+15 min</span>
+                        </div>
+                        <div style="font-size: 0.85em; color: #a0aec0;">
+                            18.7 km | 1 halte overgeslagen
+                        </div>
+                    </div>
+
+                    <button type="button" class="submit-btn" onclick="deployDiversionRoute()">
+                        Deploy Gekozen Route
+                    </button>
+                </div>
+            </div>
+
+            <div style="flex: 1; min-height: 500px;">
+                <div id="diversionMap" style="width: 100%; height: 100%; border-radius: 8px;"></div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
     
     <script>
-        // Global variables
         let map;
         let busMarkers;
         let incidentMarkers;
-        let trafficOverlay;
+        let diversionMap;
+        let diversionMarker;
+        let selectedDiversionType = 'loading';
+        let selectedDiversionRoute = 1;
+        let activeEmergencies = [];
 
-        // RBS Incident types - Complete lijst uit screenshot
-        const rbsTypes = {
-            // Bus & Voertuig
-            'AB': { name: 'Andere Bus', color: '#3182ce', priority: 'medium' },
-            'AR': { name: 'Aanrijding/Ongeval', color: '#e53e3e', priority: 'critical' },
-            'BV': { name: 'Bereidbaarheid Verstoringen', color: '#f6ad55', priority: 'high' },
-            'TBS': { name: 'Bevuiling TBS', color: '#f6ad55', priority: 'medium' },
-            'DR': { name: 'DRIS Systemen', color: '#3182ce', priority: 'low' },
-            'DU': { name: 'Dienstuitvoering', color: '#3182ce', priority: 'medium' },
-            
-            // Gebouwen & Infrastructuur
-            'GB': { name: 'Gebouwen', color: '#718096', priority: 'low' },
-            'GV': { name: 'Gevonden/Verloren voorwerpen', color: '#38a169', priority: 'low' },
-            'IN': { name: 'Incident Periferie', color: '#f6ad55', priority: 'medium' },
-            'IS': { name: 'Infrastructuur verstoringen', color: '#e53e3e', priority: 'high' },
-            
-            // Milieu & Veiligheid
-            'MC': { name: 'Milieu calamiteiten', color: '#e53e3e', priority: 'critical' },
-            'NT': { name: 'Noodoproep test', color: '#38a169', priority: 'low' },
-            'OM': { name: 'Omleidingen', color: '#f6ad55', priority: 'medium' },
-            'OP': { name: 'Oplaad apparaat AHM/AVM', color: '#3182ce', priority: 'low' },
-            'OS': { name: 'Onveilige situatie', color: '#e53e3e', priority: 'critical' },
-            
-            // Personeel & Planning
-            'PB': { name: 'Plaatsbewijzen', color: '#3182ce', priority: 'low' },
-            'PM': { name: 'Personele Mutatie', color: '#f6ad55', priority: 'high' },
-            'RE': { name: 'Registratie reserve personeel', color: '#38a169', priority: 'low' },
-            'RG': { name: 'Rit wel gereden', color: '#38a169', priority: 'low' },
-            'R1': { name: 'ROV Intern', color: '#e53e3e', priority: 'critical' },
-            'RM': { name: 'Regiomanager meldingen', color: '#f6ad55', priority: 'medium' },
-            'RV': { name: 'Rit vervallen', color: '#e53e3e', priority: 'critical' },
-            
-            // Sociale & Schade
-            'SI': { name: 'Sociale Veiligheid Incidenten', color: '#e53e3e', priority: 'critical' },
-            'SP': { name: 'SOC probleem', color: '#f6ad55', priority: 'medium' },
-            'SV': { name: 'Schademelding voertuig', color: '#f6ad55', priority: 'medium' },
-            
-            // Vertragingen & Verstoringen
-            'TL': { name: 'Te laat meldingen', color: '#f6ad55', priority: 'medium' },
-            'TK': { name: 'Trolley verstoringen', color: '#e53e3e', priority: 'high' },
-            'TV': { name: 'Tramverstoringen', color: '#e53e3e', priority: 'high' },
-            'VD': { name: 'Voertuig Defect', color: '#e53e3e', priority: 'high' },
-            'NL': { name: 'Treinverstoring', color: '#f6ad55', priority: 'high' },
-            'VR': { name: 'Voertuig Ruiling', color: '#3182ce', priority: 'medium' },
-            'VT': { name: 'Vertragingsmelding', color: '#f6ad55', priority: 'medium' },
-            'VV': { name: 'Voertuig Vol', color: '#f6ad55', priority: 'medium' },
-            'ZM': { name: 'Ziek- en Herstelmelding personeel', color: '#f6ad55', priority: 'high' }
-        };
-
-        // Dynamic form fields based on incident type
-        function updateIncidentForm(type) {
-            const additionalFields = document.getElementById('additionalFields');
-            if (!additionalFields) return;
-            
-            let html = '';
-            
-            // Add specific fields based on incident type
-            switch(type) {
-                case 'AR': // Aanrijding/Ongeval
-                    html = `
-                        <label class="form-label">Aantal betrokkenen</label>
-                        <input type="number" class="form-input" id="casualties" placeholder="0" min="0">
-                        <label class="form-label" style="margin-top: 10px;">Letsel aanwezig?</label>
-                        <select class="form-select">
-                            <option>Geen letsel</option>
-                            <option>Licht letsel</option>
-                            <option>Zwaar letsel</option>
-                        </select>
-                    `;
-                    break;
-                    
-                case 'VT': // Vertragingsmelding
-                    html = `
-                        <label class="form-label">Verwachte vertraging (minuten)</label>
-                        <input type="number" class="form-input" id="delay" placeholder="0" min="0">
-                        <label class="form-label" style="margin-top: 10px;">Oorzaak vertraging</label>
-                        <select class="form-select">
-                            <option>File/Verkeer</option>
-                            <option>Technisch defect</option>
-                            <option>Personeelstekort</option>
-                            <option>Wegwerkzaamheden</option>
-                            <option>Weer omstandigheden</option>
-                            <option>Anders</option>
-                        </select>
-                    `;
-                    break;
-                    
-                case 'PM': // Personele Mutatie
-                    html = `
-                        <label class="form-label">Type mutatie</label>
-                        <select class="form-select">
-                            <option>Ziekmelding</option>
-                            <option>Herstelmelding</option>
-                            <option>Dienst ruil</option>
-                            <option>Verlof aanvraag</option>
-                            <option>Overwerk</option>
-                        </select>
-                        <label class="form-label" style="margin-top: 10px;">Chauffeur nummer</label>
-                        <input type="text" class="form-input" placeholder="Bijv: 445">
-                    `;
-                    break;
-                    
-                case 'VD': // Voertuig Defect
-                    html = `
-                        <label class="form-label">Type defect</label>
-                        <select class="form-select">
-                            <option>Motor/Aandrijving</option>
-                            <option>Remmen</option>
-                            <option>Verlichting</option>
-                            <option>Deuren</option>
-                            <option>Airco/Verwarming</option>
-                            <option>Elektronica</option>
-                            <option>Band/Wielophanging</option>
-                            <option>Anders</option>
-                        </select>
-                        <label class="form-label" style="margin-top: 10px;">Kan doorrijden?</label>
-                        <select class="form-select">
-                            <option>Ja, met aanpassingen</option>
-                            <option>Nee, stilstand</option>
-                            <option>Nee, naar depot</option>
-                        </select>
-                    `;
-                    break;
-                    
-                case 'SI': // Sociale Veiligheid
-                    html = `
-                        <label class="form-label">Type incident</label>
-                        <select class="form-select">
-                            <option>Agressie verbaal</option>
-                            <option>Agressie fysiek</option>
-                            <option>Vandalisme</option>
-                            <option>Diefstal</option>
-                            <option>Overlast</option>
-                            <option>Discriminatie</option>
-                        </select>
-                        <label class="form-label" style="margin-top: 10px;">Politie nodig?</label>
-                        <select class="form-select">
-                            <option>Ja, spoed</option>
-                            <option>Ja, geen spoed</option>
-                            <option>Nee, wel melding</option>
-                            <option>Nee</option>
-                        </select>
-                    `;
-                    break;
-            }
-            
-            additionalFields.innerHTML = html;
-        }
-
-        // Initialize map
         function initMap() {
             if (typeof L === 'undefined') {
                 setTimeout(initMap, 100);
@@ -1107,570 +820,23 @@
                 maxZoom: 19
             }).addTo(map);
 
-            // Initialize layers
             busMarkers = L.layerGroup().addTo(map);
             incidentMarkers = L.layerGroup().addTo(map);
-            trafficOverlay = L.layerGroup();
-
-            // Add initial data
-            addBusMarkers();
-            addIncidentMarkers();
-            addTrafficOverlay();
         }
 
-        // Bus data - Mix van Transdev en Connexxion lijnen - UITGEBREID MET ALLE REGIO'S
-        const busData = [
-            // NOORD-HOLLAND NOORD (Connexxion)
-            { line: '130', lat: 52.6324, lng: 4.7534, status: 'active', incident: null, operator: 'Connexxion', route: 'Alkmaar - Den Helder' },
-            { line: '135', lat: 52.7204, lng: 4.7601, status: 'active', incident: null, operator: 'Connexxion', route: 'Den Helder - Texel Veer' },
-            { line: '151', lat: 52.5074, lng: 4.6587, status: 'delayed', incident: 'File N9', operator: 'Connexxion', route: 'Alkmaar - Hoorn' },
-            { line: '160', lat: 52.6421, lng: 5.0571, status: 'active', incident: null, operator: 'Connexxion', route: 'Hoorn - Enkhuizen' },
-            { line: '165', lat: 52.9589, lng: 4.7597, status: 'active', incident: null, operator: 'Connexxion', route: 'Den Helder - Texel' },
-            
-            // EINDHOVEN REGIO (Hermes/Transdev)
-            { line: '401', lat: 51.4416, lng: 5.4697, status: 'active', incident: null, operator: 'Transdev', route: 'Eindhoven CS - Eindhoven Airport' },
-            { line: '402', lat: 51.4356, lng: 5.4813, status: 'active', incident: null, operator: 'Transdev', route: 'Eindhoven - Best' },
-            { line: '403', lat: 51.4871, lng: 5.4547, status: 'stopped', incident: 'Motor storing', operator: 'Transdev', route: 'Eindhoven - Nuenen' },
-            { line: '404', lat: 51.4651, lng: 5.4202, status: 'active', incident: null, operator: 'Transdev', route: 'Eindhoven - Veldhoven' },
-            { line: '405', lat: 51.3311, lng: 5.5681, status: 'delayed', incident: 'Vertraging', operator: 'Transdev', route: 'Eindhoven - Valkenswaard' },
-            { line: '7', lat: 51.4504, lng: 5.4534, status: 'active', incident: null, operator: 'Transdev', route: 'Eindhoven Stadsbus' },
-            
-            // ARNHEM REGIO (Connexxion/Breng)
-            { line: '1', lat: 51.9851, lng: 5.8987, status: 'active', incident: null, operator: 'Breng', route: 'Arnhem CS - Velp' },
-            { line: '3', lat: 51.9823, lng: 5.9156, status: 'active', incident: null, operator: 'Breng', route: 'Arnhem CS - Presikhaaf' },
-            { line: '5', lat: 51.9691, lng: 5.9012, status: 'delayed', incident: 'Wegwerkzaamheden', operator: 'Breng', route: 'Arnhem CS - Vredenburg' },
-            { line: '331', lat: 51.9884, lng: 5.9454, status: 'active', incident: null, operator: 'Breng', route: 'Arnhem - Huissen' },
-            { line: '43', lat: 52.0112, lng: 5.9315, status: 'stopped', incident: 'RITUITVAL', operator: 'Breng', route: 'Arnhem - Zevenaar' },
-            
-            // NIJMEGEN REGIO (Connexxion/Breng)
-            { line: '6', lat: 51.8426, lng: 5.8545, status: 'active', incident: null, operator: 'Breng', route: 'Nijmegen CS - Lent' },
-            { line: '8', lat: 51.8336, lng: 5.8612, status: 'active', incident: null, operator: 'Breng', route: 'Nijmegen CS - Berg en Dal' },
-            { line: '11', lat: 51.8487, lng: 5.8723, status: 'delayed', incident: 'Studentenprotest', operator: 'Breng', route: 'Nijmegen CS - Universiteit' },
-            { line: '300', lat: 51.8125, lng: 5.8371, status: 'active', incident: null, operator: 'Breng', route: 'Nijmegen - Wijchen' },
-            { line: '325', lat: 51.8234, lng: 5.8845, status: 'active', incident: null, operator: 'Breng', route: 'Nijmegen - Groesbeek' },
-            
-            // APELDOORN REGIO (Connexxion/Keolis)
-            { line: '102', lat: 52.2115, lng: 5.9699, status: 'active', incident: null, operator: 'Connexxion', route: 'Apeldoorn CS - Ugchelen' },
-            { line: '103', lat: 52.2073, lng: 5.9564, status: 'active', incident: null, operator: 'Connexxion', route: 'Apeldoorn - Beekbergen' },
-            { line: '108', lat: 52.2168, lng: 5.9845, status: 'stopped', incident: 'Defecte deuren', operator: 'Connexxion', route: 'Apeldoorn - Teuge' },
-            { line: '141', lat: 52.2092, lng: 6.0123, status: 'active', incident: null, operator: 'Connexxion', route: 'Apeldoorn - Deventer' },
-            { line: '17', lat: 52.2201, lng: 5.9678, status: 'delayed', incident: 'File A50', operator: 'Connexxion', route: 'Apeldoorn Stadsbus' },
-            
-            // EDE REGIO (Connexxion)
-            { line: '86', lat: 52.0445, lng: 5.6643, status: 'active', incident: null, operator: 'Connexxion', route: 'Ede CS - Wageningen' },
-            { line: '88', lat: 52.0578, lng: 5.6712, status: 'active', incident: null, operator: 'Connexxion', route: 'Ede - Veenendaal' },
-            { line: '106', lat: 52.0234, lng: 5.6534, status: 'delayed', incident: 'Marktdag drukte', operator: 'Connexxion', route: 'Ede - Barneveld' },
-            { line: '107', lat: 52.0812, lng: 5.6987, status: 'active', incident: null, operator: 'Connexxion', route: 'Ede - Renkum' },
-            { line: '2', lat: 52.0445, lng: 5.6598, status: 'active', incident: null, operator: 'Connexxion', route: 'Ede Stadsbus' },
-            
-            // Connexxion Schiphol/Amsterdam lijnen (bestaand)
-            { line: '300', lat: 52.3081, lng: 4.7642, status: 'active', incident: null, operator: 'Connexxion', route: 'Schiphol - Haarlem' },
-            { line: '310', lat: 52.3676, lng: 4.9041, status: 'active', incident: null, operator: 'Connexxion', route: 'Amsterdam Zuid - Nieuw Vennep' },
-            { line: '346', lat: 52.3812, lng: 4.6332, status: 'delayed', incident: 'File A9', operator: 'Connexxion', route: 'Haarlem - Schiphol' },
-            { line: '361', lat: 52.3329, lng: 4.8654, status: 'stopped', incident: 'RITUITVAL', operator: 'Connexxion', route: 'Schiphol Plaza - Uithoorn' },
-            
-            // Connexxion R-NET lijnen (bestaand)
-            { line: 'R-NET 340', lat: 52.3587, lng: 4.8686, status: 'active', incident: null, operator: 'Connexxion R-NET', route: 'Haarlem - Schiphol' },
-            { line: 'R-NET 341', lat: 52.2373, lng: 4.8244, status: 'delayed', incident: 'Vertraging', operator: 'Connexxion R-NET', route: 'Schiphol - Uithoorn' },
-            
-            // Utrecht regio (bestaand)
-            { line: '120', lat: 52.0907, lng: 5.1214, status: 'active', incident: null, operator: 'Connexxion', route: 'Utrecht CS - Nieuwegein' },
-            { line: '127', lat: 52.1396, lng: 5.0864, status: 'active', incident: null, operator: 'Connexxion', route: 'Utrecht - Breukelen' },
-            
-            // Rotterdam/Den Haag regio (bestaand)
-            { line: '430', lat: 52.0787, lng: 4.3221, status: 'active', incident: null, operator: 'Connexxion', route: 'Den Haag CS - Zoetermeer' },
-            { line: '455', lat: 52.0704, lng: 4.2973, status: 'stopped', incident: 'Agressie incident', operator: 'Connexxion', route: 'Den Haag - Scheveningen' },
-            
-            // Transdev lijnen (bestaand)
-            { line: '397', lat: 52.3184, lng: 4.7423, status: 'active', incident: null, operator: 'Transdev', route: 'Amsterdam - Schiphol Noord' },
-            { line: '195', lat: 52.3798, lng: 4.8936, status: 'active', incident: null, operator: 'Transdev', route: 'Amsterdam CS - Amstelveen' }
-        ];
-
-        // Add bus markers - now with operator colors
-        function addBusMarkers() {
-            busMarkers.clearLayers();
-            
-            busData.forEach(bus => {
-                // Color based on operator and status
-                let iconColor = '#38a169'; // default green
-                
-                if (bus.status === 'stopped') {
-                    iconColor = '#e53e3e'; // red for stopped
-                } else if (bus.status === 'delayed') {
-                    iconColor = '#dd6b20'; // orange for delayed
-                } else {
-                    // Active buses - color by operator
-                    if (bus.operator === 'Connexxion') {
-                        iconColor = '#0066cc'; // Connexxion blue
-                    } else if (bus.operator === 'Connexxion R-NET') {
-                        iconColor = '#00a0e6'; // R-NET light blue
-                    } else if (bus.operator === 'Transdev') {
-                        iconColor = '#E30613'; // Transdev red
-                    }
-                }
-                
-                const busIcon = L.divIcon({
-                    className: 'bus-marker-icon',
-                    html: `
-                        <div style="background: ${iconColor}; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 9px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);">
-                            ${bus.line.replace('R-NET ', '')}
-                        </div>
-                    `,
-                    iconSize: [32, 32],
-                    iconAnchor: [16, 16]
-                });
-
-                const marker = L.marker([bus.lat, bus.lng], { icon: busIcon })
-                    .bindPopup(`
-                        <div style="padding: 10px; min-width: 250px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <h4 style="margin: 0; color: #E30613;">Lijn ${bus.line}</h4>
-                                <span style="background: ${bus.operator.includes('Connexxion') ? '#0066cc' : '#E30613'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">
-                                    ${bus.operator}
-                                </span>
-                            </div>
-                            ${bus.incident ? `<div style="color: #e53e3e; font-weight: bold; margin-bottom: 5px;">⚠️ ${bus.incident}</div>` : ''}
-                            <div style="font-size: 12px; color: #666; margin-bottom: 5px;">
-                                <strong>Route:</strong> ${bus.route}
-                            </div>
-                            <div style="font-size: 12px; color: #666; margin-bottom: 5px;">
-                                <strong>Status:</strong> 
-                                <span style="color: ${iconColor};">
-                                    ${bus.status === 'stopped' ? '🔴 Stilstand' : 
-                                      bus.status === 'delayed' ? '🟠 Vertraagd' : '🟢 Actief'}
-                                </span>
-                            </div>
-                            <div style="font-size: 12px; color: #666; margin-bottom: 5px;">
-                                <strong>Chauffeur:</strong> #${Math.floor(Math.random() * 900 + 100)}
-                            </div>
-                            <div style="font-size: 12px; color: #666; margin-bottom: 8px;">
-                                <strong>Passagiers:</strong> ${Math.floor(Math.random() * 60 + 10)}
-                            </div>
-                            <div style="display: flex; gap: 5px;">
-                                <button onclick="createRBSIncident('${bus.line}')" style="background: #E30613; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;">
-                                    📋 RBS Melding
-                                </button>
-                                <button onclick="contactDriver('${bus.line}')" style="background: #0066cc; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;">
-                                    📞 Contact
-                                </button>
-                            </div>
-                        </div>
-                    `);
-                
-                busMarkers.addLayer(marker);
-            });
-        }
-
-        // Emergency Management System - INCOMING CALLS
-        let activeEmergencies = [];
-        let emergencyQueue = [];
-        
-        // Simulate incoming emergency call from driver
-        function incomingEmergencyCall(data) {
-            const emergency = data || {
-                id: Date.now(),
-                line: ['300', '397', '346', 'R-NET 340', '81'][Math.floor(Math.random() * 5)],
-                driver: Math.floor(Math.random() * 900 + 100),
-                location: getRandomLocation(),
-                time: new Date().toLocaleTimeString('nl-NL'),
-                type: getRandomEmergencyType(),
-                status: 'incoming',
-                priority: 1
-            };
-            
-            activeEmergencies.push(emergency);
-            showIncomingEmergency(emergency);
-            updateEmergencyCount();
-            playIncomingAlert();
-            
-            return emergency;
-        }
-        
-        // Show incoming emergency notification
-        function showIncomingEmergency(emergency) {
-            // Update popup with incoming call info
-            document.getElementById('emergencyLine').textContent = `Lijn ${emergency.line}`;
-            document.getElementById('emergencyDriver').textContent = `Chauffeur #${emergency.driver}`;
-            document.getElementById('emergencyLocation').textContent = emergency.location;
-            document.getElementById('emergencyType').textContent = emergency.type;
-            
-            // Show popup
-            document.getElementById('emergencyPopup').style.display = 'block';
-            
-            // Flash screen effect for urgent calls
-            if (emergency.type.includes('PANIC') || emergency.type.includes('Geweld')) {
-                addPanicOverlay();
-            }
-            
-            // Log to incident list
-            addEmergencyToList(emergency);
-        }
-        
-        // Accept incoming emergency call
-        function acceptEmergency() {
-            const popup = document.getElementById('emergencyPopup');
-            popup.style.display = 'none';
-            removePanicOverlay();
-            
-            // Get current emergency details
-            const line = document.getElementById('emergencyLine').textContent;
-            const driver = document.getElementById('emergencyDriver').textContent;
-            const type = document.getElementById('emergencyType').textContent;
-            
-            // Open communication channel
-            alert(`✅ NOODOPROEP AANGENOMEN\n\n` +
-                  `${line} - ${driver}\n` +
-                  `Type: ${type}\n\n` +
-                  `Status:\n` +
-                  `→ Directe spraakverbinding actief\n` +
-                  `→ GPS tracking live\n` +
-                  `→ Camera beelden beschikbaar\n` +
-                  `→ Hulpdiensten stand-by`);
-            
-            // Start response protocol
-            startEmergencyResponse();
-        }
-        
-        // Escalate to 112
-        function escalateEmergency() {
-            alert(`📞 DOORSCHAKELING NAAR 112\n\n` +
-                  `✓ Meldkamer gekoppeld\n` +
-                  `✓ 3-weg gesprek actief (Chauffeur-Centrale-112)\n` +
-                  `✓ GPS coördinaten gedeeld\n` +
-                  `✓ Prioriteit 1 hulpdiensten onderweg\n` +
-                  `✓ Geschatte aankomst: 3-5 minuten`);
-                  
-            document.getElementById('emergencyPopup').style.display = 'none';
-            removePanicOverlay();
-            
-            // Update status
-            updateEmergencyStatus('escalated');
-        }
-        
-        // Start emergency response protocol
-        function startEmergencyResponse() {
-            // Automatic actions based on emergency type
-            const type = document.getElementById('emergencyType').textContent;
-            
-            let protocol = [];
-            
-            if (type.includes('Geweld') || type.includes('Agressie')) {
-                protocol = [
-                    'Politie gealarmeerd - Priority 1',
-                    'Dichtstbijzijnde bussen gewaarschuwd',
-                    'Halte afgesloten voor publiek',
-                    'BOA\'s onderweg'
-                ];
-            } else if (type.includes('Medisch')) {
-                protocol = [
-                    'Ambulance onderweg',
-                    'AED locaties gemarkeerd',
-                    'EHBO opgeroepen',
-                    'Vervangend vervoer geregeld'
-                ];
-            } else if (type.includes('Defect')) {
-                protocol = [
-                    'Monteur onderweg',
-                    'Bergingsdienst gealarmeerd',
-                    'Reserve bus ingezet',
-                    'Reizigers geïnformeerd'
-                ];
-            } else if (type.includes('PANIC')) {
-                protocol = [
-                    'ALLE eenheden gealarmeerd',
-                    'Directe politie inzet',
-                    'Live tracking actief',
-                    'Management geïnformeerd'
-                ];
-            }
-            
-            console.log('Emergency Protocol Started:', protocol);
-        }
-        
-        // Test incoming emergency
-        function testEmergency() {
-            // Simulate test emergency
-            const testEmergency = {
-                id: Date.now(),
-                line: 'TEST-999',
-                driver: '000',
-                location: 'Test Locatie - Centrale',
-                time: new Date().toLocaleTimeString('nl-NL'),
-                type: 'TEST NOODOPROEP - Niet Echt',
-                status: 'test',
-                priority: 0
-            };
-            
-            showIncomingEmergency(testEmergency);
-            
-            setTimeout(() => {
-                alert('✅ TEST SUCCESVOL\n\n' +
-                      'Systeem check:\n' +
-                      '→ Noodoproep ontvangst: OK\n' +
-                      '→ Audio kanalen: OK\n' +
-                      '→ GPS systeem: OK\n' +
-                      '→ Doorschakeling 112: OK\n' +
-                      '→ Response tijd: 2.3 sec\n\n' +
-                      'Systeem operationeel');
-            }, 2000);
-        }
-        
-        // Silent alarm from driver
-        function handleSilentAlarm() {
-            const silentEmergency = {
-                id: Date.now(),
-                line: 'VERBORGEN',
-                driver: 'ANONIEM',
-                location: 'Tracking actief...',
-                time: new Date().toLocaleTimeString('nl-NL'),
-                type: '🔇 STIL ALARM - Discrete assistentie',
-                status: 'silent',
-                priority: 1
-            };
-            
-            // Only notify supervisor, no popup
-            console.log('🔇 Stil alarm ontvangen:', silentEmergency);
-            
-            // Add discrete indicator
-            document.getElementById('emergencyCount').style.background = '#805ad5';
-            
-            alert('🔇 STIL ALARM ONTVANGEN\n\n' +
-                  'Chauffeur heeft discrete hulp nodig\n\n' +
-                  '→ GPS tracking actief\n' +
-                  '→ Politie in burger onderweg\n' +
-                  '→ Audio monitoring gestart\n' +
-                  '→ Geen zichtbare response\n\n' +
-                  'Handel voorzichtig');
-        }
-        
-        // Get random location for simulation
-        function getRandomLocation() {
-            const locations = [
-                'A2 km 45.2 - Amsterdam',
-                'Schiphol Plaza - Busstation',
-                'Haarlem CS - Perron 3',
-                'Rotterdam Centraal - Halte B',
-                'Utrecht Vredenburg - Halte 2',
-                'Den Haag CS - Busplatform',
-                'A9 Afslag Aalsmeer',
-                'Eindhoven Airport - Kiss & Ride',
-                'Groningen Hoofdstation',
-                'GPS: 52.3676, 4.9041'
-            ];
-            return locations[Math.floor(Math.random() * locations.length)];
-        }
-        
-        // Get random emergency type
-        function getRandomEmergencyType() {
-            const types = [
-                '🔴 PANIC - Directe hulp nodig',
-                '⚔️ Geweld/Agressie - Wapen gezien',
-                '🤕 Medisch noodgeval - Passagier',
-                '🚨 Aanrijding - Letsel aanwezig',
-                '💥 Defect - Rook in voertuig',
-                '👊 Agressieve passagier',
-                '🔥 Brand melding',
-                '🚸 Kind vermist in bus',
-                '⚠️ Verdachte situatie'
-            ];
-            return types[Math.floor(Math.random() * types.length)];
-        }
-        
-        // Add emergency to list
-        function addEmergencyToList(emergency) {
-            const incidentsList = document.getElementById('incidentsList');
-            if (!incidentsList) return;
-            
-            const emergencyItem = document.createElement('div');
-            emergencyItem.className = 'incident-item critical';
-            emergencyItem.style.animation = 'emergencyBlink 2s infinite';
-            emergencyItem.innerHTML = `
-                <div class="incident-header">
-                    <span class="incident-type" style="color: white; background: #e53e3e; padding: 2px 6px; border-radius: 4px;">
-                        🚨 NOODOPROEP
-                    </span>
-                    <span class="incident-time">${emergency.time}</span>
-                </div>
-                <div><strong>Lijn ${emergency.line}</strong> - Chauffeur #${emergency.driver}</div>
-                <div style="font-size: 0.8em; color: #fff; font-weight: bold;">${emergency.type}</div>
-                <div style="font-size: 0.8em; color: #a0aec0;">${emergency.location}</div>
-            `;
-            
-            incidentsList.insertBefore(emergencyItem, incidentsList.firstChild);
-        }
-        
-        // Play incoming alert sound
-        function playIncomingAlert() {
-            // Visual alert
-            let flashes = 0;
-            const flashInterval = setInterval(() => {
-                const header = document.querySelector('.header');
-                if (header) {
-                    header.style.background = flashes % 2 === 0 ? '#e53e3e' : 'linear-gradient(135deg, #1a1f2e 0%, #2d3748 100%)';
-                }
-                flashes++;
-                if (flashes > 6) {
-                    clearInterval(flashInterval);
-                    header.style.background = 'linear-gradient(135deg, #1a1f2e 0%, #2d3748 100%)';
-                }
-            }, 300);
-            
-            console.log('🔔 INCOMING EMERGENCY CALL ALERT');
-        }
-        
-        // Update emergency counter
-        function updateEmergencyCount() {
-            const counter = document.getElementById('emergencyCount');
-            if (counter) {
-                const activeCount = activeEmergencies.filter(e => 
-                    e.status === 'incoming' || e.status === 'active'
-                ).length;
-                counter.textContent = activeCount;
-                
-                // Change color based on count
-                if (activeCount > 0) {
-                    counter.style.background = '#e53e3e';
-                    counter.style.animation = 'emergencyBlink 1s infinite';
-                } else {
-                    counter.style.background = '#38a169';
-                    counter.style.animation = 'none';
-                }
-            }
-        }
-        
-        // Update emergency status
-        function updateEmergencyStatus(status) {
-            if (activeEmergencies.length > 0) {
-                activeEmergencies[activeEmergencies.length - 1].status = status;
-            }
-            updateEmergencyCount();
-        }
-        
-        // Simulate incoming calls periodically (for demo)
-        function simulateIncomingCalls() {
-            // Random chance of emergency
-            if (Math.random() > 0.997) {
-                incomingEmergencyCall();
-            }
-            
-            // Random chance of silent alarm
-            if (Math.random() > 0.999) {
-                handleSilentAlarm();
-            }
-        }
-        
-        // Panic button now triggers incoming test
-        function activatePanicButton() {
-            // Simulate incoming panic call
-            incomingEmergencyCall({
-                id: Date.now(),
-                line: prompt('Test noodoproep voor lijn:', '397') || '397',
-                driver: Math.floor(Math.random() * 900 + 100),
-                location: 'Test locatie - GPS actief',
-                time: new Date().toLocaleTimeString('nl-NL'),
-                type: '🔴 PANIC BUTTON - Test',
-                status: 'incoming',
-                priority: 1
-            });
-        }
-        
-        // Silent alarm function
-        function silentAlarm() {
-            handleSilentAlarm();
-        }
-        
-        // Add/remove panic overlay
-        function addPanicOverlay() {
-            if (!document.querySelector('.panic-overlay')) {
-                const overlay = document.createElement('div');
-                overlay.className = 'panic-overlay';
-                document.body.appendChild(overlay);
-            }
-        }
-        
-        function removePanicOverlay() {
-            const overlay = document.querySelector('.panic-overlay');
-            if (overlay) {
-                overlay.remove();
-            }
-        }
-        
-        // Auto-check for incoming emergencies
-        setInterval(simulateIncomingCalls, 5000);
-
-        // Add incident markers
-        function addIncidentMarkers() {
-            incidentMarkers.clearLayers();
-            
-            // Add incident locations
-            const incidents = [
-                { type: 'R1', lat: 52.3081, lng: 4.7642, desc: 'Rituitval Lijn 397' },
-                { type: 'AUO', lat: 52.3812, lng: 4.6332, desc: 'Ongeval A9' },
-                { type: 'VD', lat: 52.3587, lng: 4.8686, desc: 'Defect Bus 8234' },
-                { type: 'IN', lat: 51.9244, lng: 4.4777, desc: 'Agressie Lijn 44' }
-            ];
-            
-            incidents.forEach(incident => {
-                const incidentIcon = L.divIcon({
-                    html: `<div style="background: ${rbsTypes[incident.type].color}; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 10px; border: 1px solid white;">
-                            ${incident.type}
-                          </div>`,
-                    iconSize: [40, 20],
-                    iconAnchor: [20, 10]
-                });
-                
-                const marker = L.marker([incident.lat, incident.lng], { icon: incidentIcon })
-                    .bindPopup(`<strong>${rbsTypes[incident.type].name}</strong><br>${incident.desc}`);
-                
-                incidentMarkers.addLayer(marker);
-            });
-        }
-
-        // Add traffic overlay
-        function addTrafficOverlay() {
-            trafficOverlay.clearLayers();
-            
-            // A2 file
-            const a2Traffic = L.polyline([
-                [52.0907, 5.1214],
-                [52.2373, 4.9892]
-            ], {
-                color: '#e53e3e',
-                weight: 8,
-                opacity: 0.7
-            }).bindPopup('A2: Volledig gestremd - 3 ritten uitgevallen');
-            
-            trafficOverlay.addLayer(a2Traffic);
-        }
-
-        // View functions - Updated with all regions
         function setView(location) {
             const views = {
                 'nederland': { center: [52.097, 5.12], zoom: 8 },
                 'amsterdam': { center: [52.3676, 4.9041], zoom: 11 },
-                'noordholland': { center: [52.7500, 4.7500], zoom: 10 },
-                'rotterdam': { center: [51.9244, 4.4777], zoom: 11 },
                 'utrecht': { center: [52.0907, 5.1214], zoom: 11 },
-                'eindhoven': { center: [51.4416, 5.4697], zoom: 11 },
-                'arnhem': { center: [51.9130, 5.9000], zoom: 10 },
-                'nijmegen': { center: [51.8426, 5.8545], zoom: 11 },
-                'apeldoorn': { center: [52.2115, 5.9699], zoom: 11 },
-                'ede': { center: [52.0445, 5.6643], zoom: 11 }
+                'eindhoven': { center: [51.4416, 5.4697], zoom: 11 }
             };
             
-            // Handle combined regions
-            if (location === 'arnhem') {
-                // Zoom out to show both Arnhem and Nijmegen
-                map.setView([51.9130, 5.9000], 10);
-            } else if (location === 'apeldoorn') {
-                // Zoom out to show both Apeldoorn and Ede
-                map.setView([52.1280, 5.8171], 10);
-            } else if (views[location] && map) {
+            if (views[location] && map) {
                 map.setView(views[location].center, views[location].zoom);
             }
         }
 
-        // RBS Modal functions
         function openRBSModal() {
             document.getElementById('rbsModal').classList.add('show');
         }
@@ -1679,85 +845,200 @@
             document.getElementById('rbsModal').classList.remove('show');
         }
 
-        // Form submission
-        document.getElementById('rbsForm')?.addEventListener('submit', function(e) {
-            e.preventDefault();
+        function openDiversionPlanner() {
+            document.getElementById('diversionModal').classList.add('show');
             
-            const formData = {
-                type: document.getElementById('incidentType').value,
-                line: document.getElementById('lineNumber').value,
-                location: document.getElementById('location').value,
-                priority: document.getElementById('priority').value,
-                description: document.getElementById('description').value
-            };
-            
-            console.log('RBS Melding aangemaakt:', formData);
-            
-            // Add to incidents list
-            addNewIncident(formData);
-            
-            // Close modal
-            closeRBSModal();
-            
-            // Show confirmation
-            alert(`RBS Melding ${formData.type} succesvol aangemaakt voor ${formData.line}`);
-        });
-
-        // Add new incident to list
-        function addNewIncident(data) {
-            const incidentsList = document.getElementById('incidentsList');
-            const priorityClass = data.priority === 'critical' ? 'critical' : 
-                                 data.priority === 'high' ? 'warning' : 'info';
-            
-            const newIncident = document.createElement('div');
-            newIncident.className = `incident-item ${priorityClass}`;
-            newIncident.innerHTML = `
-                <div class="incident-header">
-                    <span class="incident-type">${data.type}</span>
-                    <span class="incident-time">NU</span>
-                </div>
-                <div><strong>${data.line}</strong> - ${data.description}</div>
-                <div style="font-size: 0.8em; color: #a0aec0;">${data.location}</div>
-            `;
-            
-            incidentsList.insertBefore(newIncident, incidentsList.firstChild);
-            
-            // Update counters
-            updateCounters();
+            setTimeout(() => {
+                if (!diversionMap) {
+                    diversionMap = L.map('diversionMap').setView([52.3676, 4.9041], 11);
+                    
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap'
+                    }).addTo(diversionMap);
+                    
+                    diversionMap.on('click', function(e) {
+                        placeDiversionBlockage(e.latlng);
+                    });
+                } else {
+                    diversionMap.invalidateSize();
+                }
+            }, 300);
         }
 
-        // Quick actions
-        function deployBackup() {
-            alert('Reserve voertuig wordt ingezet\nBeschikbaar: Bus 9021, 9045\nChauffeur 445 onderweg');
+        function closeDiversionModal() {
+            document.getElementById('diversionModal').classList.remove('show');
         }
 
-        function callMechanic() {
-            alert('Monteur opgeroepen\nGeschatte aankomsttijd: 15 minuten');
-        }
-
-        function notifyPassengers() {
-            const message = prompt('Bericht naar reizigers:', 'Verstoring op lijn - Extra reistijd 15 minuten');
-            if (message) {
-                alert(`Bericht verstuurd naar 1,250 app gebruikers:\n"${message}"`);
+        function selectDiversionType(type) {
+            selectedDiversionType = type;
+            
+            const loadingBtn = document.getElementById('loadingBtn');
+            const accidentBtn = document.getElementById('accidentBtn');
+            
+            if (type === 'loading') {
+                loadingBtn.style.background = '#E30613';
+                accidentBtn.style.background = '#718096';
+            } else {
+                loadingBtn.style.background = '#718096';
+                accidentBtn.style.background = '#E30613';
             }
         }
 
+        function placeDiversionBlockage(latlng) {
+            if (diversionMarker) {
+                diversionMap.removeLayer(diversionMarker);
+            }
+            
+            const icon = selectedDiversionType === 'loading' ? '🚧' : '🚗';
+            
+            diversionMarker = L.marker(latlng, {
+                icon: L.divIcon({
+                    html: `<div style="font-size: 32px;">${icon}</div>`,
+                    iconSize: [40, 40]
+                })
+            }).addTo(diversionMap);
+            
+            diversionMarker.bindPopup(
+                selectedDiversionType === 'loading' 
+                    ? 'Laden/Lossen - Blokkering' 
+                    : 'Ongeval - Weg afgesloten'
+            ).openPopup();
+            
+            document.getElementById('diversionLocation').value = 
+                `${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
+        }
+
+        function calculateDiversionRoutes() {
+            if (!diversionMarker) {
+                alert('Plaats eerst een blokkering op de kaart');
+                return;
+            }
+            
+            document.getElementById('diversionResults').style.display = 'block';
+            
+            const blockage = diversionMarker.getLatLng();
+            
+            L.polyline([
+                [52.3812, 4.6332],
+                [blockage.lat + 0.02, blockage.lng],
+                [52.3081, 4.7642]
+            ], {
+                color: '#E30613',
+                weight: 4,
+                opacity: 0.7,
+                dashArray: '10, 10'
+            }).addTo(diversionMap).bindPopup('Route A');
+            
+            L.polyline([
+                [52.3812, 4.6332],
+                [blockage.lat + 0.05, blockage.lng + 0.05],
+                [52.3081, 4.7642]
+            ], {
+                color: '#3182ce',
+                weight: 4,
+                opacity: 0.7,
+                dashArray: '10, 10'
+            }).addTo(diversionMap).bindPopup('Route B');
+        }
+
+        function selectDiversionRoute(routeNum) {
+            selectedDiversionRoute = routeNum;
+            
+            document.querySelectorAll('.diversion-route-card').forEach((card, index) => {
+                if (index + 1 === routeNum) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            });
+        }
+
+        function deployDiversionRoute() {
+            const line = document.getElementById('diversionLine').value;
+            const duration = document.getElementById('diversionDuration').value;
+            const routeLetter = String.fromCharCode(64 + selectedDiversionRoute);
+            
+            if (confirm(
+                `Omleiding deployen?\n\n` +
+                `Lijn: ${line}\n` +
+                `Route: ${routeLetter}\n` +
+                `Duur: ${duration} min\n\n` +
+                `Chauffeurs worden direct geïnformeerd.`
+            )) {
+                alert(
+                    `✅ OMLEIDING GEACTIVEERD\n\n` +
+                    `→ Chauffeurs geïnformeerd\n` +
+                    `→ Navigatie bijgewerkt\n` +
+                    `→ RBS melding aangemaakt\n` +
+                    `→ Planning aangepast`
+                );
+                
+                closeDiversionModal();
+            }
+        }
+
+        function activatePanicButton() {
+            incomingEmergencyCall({
+                id: Date.now(),
+                line: '397',
+                driver: Math.floor(Math.random() * 900 + 100),
+                location: 'Test locatie',
+                time: new Date().toLocaleTimeString('nl-NL'),
+                type: '🔴 PANIC BUTTON - Test',
+                status: 'incoming',
+                priority: 1
+            });
+        }
+
+        function incomingEmergencyCall(data) {
+            const emergency = data || {
+                id: Date.now(),
+                line: '300',
+                driver: Math.floor(Math.random() * 900 + 100),
+                location: 'GPS: 52.3676, 4.9041',
+                time: new Date().toLocaleTimeString('nl-NL'),
+                type: '🔴 NOODOPROEP',
+                status: 'incoming',
+                priority: 1
+            };
+            
+            activeEmergencies.push(emergency);
+            
+            document.getElementById('emergencyLine').textContent = `Lijn ${emergency.line}`;
+            document.getElementById('emergencyDriver').textContent = `Chauffeur #${emergency.driver}`;
+            document.getElementById('emergencyLocation').textContent = emergency.location;
+            document.getElementById('emergencyType').textContent = emergency.type;
+            
+            document.getElementById('emergencyPopup').style.display = 'block';
+            document.getElementById('emergencyCount').textContent = activeEmergencies.length;
+        }
+
+        function acceptEmergency() {
+            document.getElementById('emergencyPopup').style.display = 'none';
+            alert('✅ NOODOPROEP AANGENOMEN\n\nDirecte spraakverbinding actief');
+        }
+
+        function escalateEmergency() {
+            alert('📞 DOORSCHAKELING NAAR 112\n\nMeldkamer gekoppeld');
+            document.getElementById('emergencyPopup').style.display = 'none';
+        }
+
+        function deployBackup() {
+            alert('Reserve voertuig wordt ingezet');
+        }
+
+        function callMechanic() {
+            alert('Monteur opgeroepen - ETA: 15 minuten');
+        }
+
+        function notifyPassengers() {
+            alert('Bericht verstuurd naar 1,250 app gebruikers');
+        }
+
         function alertPolice() {
-            alert('Politie gealarmeerd\nEenheid onderweg - ETA: 8 minuten');
+            alert('Politie gealarmeerd - ETA: 8 minuten');
         }
 
-        // Filter functions
-        function filterByType(type) {
-            console.log('Filter by type:', type);
-            // Implement filtering logic
-        }
-
-        function filterIncidents(severity) {
-            console.log('Filter by severity:', severity);
-            // Implement filtering logic
-        }
-
-        // Toggle functions
         function toggleIncidents() {
             if (incidentMarkers && map) {
                 if (map.hasLayer(incidentMarkers)) {
@@ -1766,18 +1047,6 @@
                 } else {
                     incidentMarkers.addTo(map);
                     document.getElementById('incidentBtn').classList.add('active');
-                }
-            }
-        }
-
-        function toggleTraffic() {
-            if (trafficOverlay && map) {
-                if (map.hasLayer(trafficOverlay)) {
-                    map.removeLayer(trafficOverlay);
-                    document.getElementById('trafficBtn').classList.remove('active');
-                } else {
-                    trafficOverlay.addTo(map);
-                    document.getElementById('trafficBtn').classList.add('active');
                 }
             }
         }
@@ -1795,455 +1064,152 @@
         }
 
         function refreshData() {
-            updateCounters();
-            console.log('Data refreshed at', new Date().toLocaleTimeString('nl-NL'));
+            console.log('Data refreshed');
         }
 
-        // Update counters
-        function updateCounters() {
-            document.getElementById('criticalCount').textContent = 
-                document.querySelectorAll('.incident-item.critical').length;
-            document.getElementById('warningCount').textContent = 
-                document.querySelectorAll('.incident-item.warning').length;
-            document.getElementById('infoCount').textContent = 
-                document.querySelectorAll('.incident-item.info').length;
-            document.getElementById('activeCount').textContent = 
-                840 + Math.floor(Math.random() * 20);
+        function filterIncidents(severity) {
+            console.log('Filter:', severity);
         }
 
-        // Update time
         function updateTime() {
             const now = new Date();
             document.getElementById('currentTime').textContent = 
                 now.toLocaleTimeString('nl-NL');
         }
 
-        // Initialize
+        document.getElementById('rbsForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                type: document.getElementById('incidentType').value,
+                line: document.getElementById('lineNumber').value,
+                location: document.getElementById('location').value,
+                priority: document.getElementById('priority').value,
+                description: document.getElementById('description').value
+            };
+            
+            closeRBSModal();
+            alert(`RBS Melding ${formData.type} succesvol aangemaakt`);
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
             initMap();
             setInterval(updateTime, 1000);
-            setInterval(updateCounters, 10000);
             updateTime();
-            updateCounters();
         });
-
-        // Create RBS incident from bus popup
-        function createRBSIncident(lineNumber) {
-            document.getElementById('lineNumber').value = lineNumber;
-            openRBSModal();
-        }
     </script>
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 
-<script>
-// Firebase configuratie
-const firebaseConfig = {
-  apiKey: "AIzaSyDpGn5-OgZyZB-H68S6XQ7GvkJXePLNvc0",
-  authDomain: "rbs20-7df9b.firebaseapp.com",
-  databaseURL: "https://rbs20-7df9b-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "rbs20-7df9b",
-  storageBucket: "rbs20-7df9b.firebasestorage.app",
-  messagingSenderId: "1074779022793",
-  appId: "1:1074779022793:web:86c664561738169ff63418"
-};
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
-console.log('✅ Firebase connected!');
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDpGn5-OgZyZB-H68S6XQ7GvkJXePLNvc0",
+            authDomain: "rbs20-7df9b.firebaseapp.com",
+            databaseURL: "https://rbs20-7df9b-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "rbs20-7df9b",
+            storageBucket: "rbs20-7df9b.firebasestorage.app",
+            messagingSenderId: "1074779022793",
+            appId: "1:1074779022793:web:86c664561738169ff63418"
+        };
 
-// Live data updates
-function initializeLiveData() {
-    console.log('🔄 Starting live data listeners...');
-    
-    // Luister naar bus updates
-    database.ref('buses').on('value', (snapshot) => {
-        const liveBuses = snapshot.val();
-        if (liveBuses) {
-            updateLiveBuses(liveBuses);
-            console.log('🚌 Buses updated:', Object.keys(liveBuses).length);
-        }
-    });
-    
-    // Luister naar nieuwe incidenten
-    database.ref('incidents').on('child_added', (snapshot) => {
-        const incident = snapshot.val();
-        addLiveIncident(incident);
-        console.log('⚠️ New incident:', incident.type);
-    });
-    
-    // Luister naar noodoproepen
-    database.ref('emergencies').on('child_added', (snapshot) => {
-        const emergency = snapshot.val();
-        if (emergency.timestamp > Date.now() - 60000) {
-            incomingEmergencyCall(emergency);
-            console.log('🚨 EMERGENCY CALL!');
-        }
-    });
-}
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        console.log('✅ Firebase connected!');
 
-// Update bus markers met live data
-function updateLiveBuses(liveBuses) {
-    if (!window.busMarkers) {
-        console.log('⏳ Map not ready yet, skipping bus update');
-        return;
-    }
-    
-    busMarkers.clearLayers();
-    
-    Object.keys(liveBuses).forEach(busId => {
-        const bus = liveBuses[busId];
-        
-        const iconColor = bus.status === 'stopped' ? '#e53e3e' : 
-                         bus.status === 'delayed' ? '#dd6b20' : '#38a169';
-        
-        const busIcon = L.divIcon({
-            className: 'bus-marker-icon',
-            html: `<div style="background: ${iconColor}; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 9px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">${bus.line}</div>`,
-            iconSize: [32, 32]
-        });
-        
-        const marker = L.marker([bus.lat, bus.lng], { icon: busIcon })
-            .bindPopup(`
-                <div style="font-family: Arial, sans-serif;">
-                    <strong style="color: #E30613; font-size: 14px;">Lijn ${bus.line}</strong><br>
-                    <strong>Status:</strong> ${bus.status}<br>
-                    <strong>Snelheid:</strong> ${bus.speed || 0} km/u<br>
-                    <strong>Passagiers:</strong> ${bus.passengers || 0}<br>
-                    <small style="color: #666;">Live data</small>
-                </div>
-            `);
-        
-        busMarkers.addLayer(marker);
-    });
-}
-
-// Voeg live incident toe aan de lijst
-function addLiveIncident(incident) {
-    const incidentsList = document.getElementById('incidentsList');
-    if (!incidentsList) {
-        console.log('⚠️ Incidents list not found');
-        return;
-    }
-    
-    const incidentDiv = document.createElement('div');
-    incidentDiv.className = `incident-item ${incident.priority || 'info'}`;
-    incidentDiv.style.animation = 'slideIn 0.3s ease-out';
-    incidentDiv.innerHTML = `
-        <div class="incident-header">
-            <span class="incident-type">${incident.type}</span>
-            <span class="incident-time" style="background: #38a169; color: white; padding: 2px 8px; border-radius: 3px; font-size: 0.75em;">🔴 LIVE</span>
-        </div>
-        <div><strong>${incident.line}</strong> - ${incident.description}</div>
-        <div style="font-size: 0.8em; color: #a0aec0; margin-top: 4px;">${incident.location}</div>
-    `;
-    
-    // Voeg toe bovenaan de lijst
-    incidentsList.insertBefore(incidentDiv, incidentsList.firstChild);
-    
-    // Beperk tot maximaal 10 incidenten
-    while (incidentsList.children.length > 10) {
-        incidentsList.removeChild(incidentsList.lastChild);
-    }
-}
-
-// Start live data wanneer pagina klaar is
-window.addEventListener('load', function() {
-    console.log('📱 Page loaded, waiting for map...');
-    setTimeout(() => {
-        initializeLiveData();
-    }, 2000);
-});
-
-// CSS animatie voor nieuwe incidenten
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateX(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
-`;
-document.head.appendChild(style);
-</script>
-    <!-- Diversion Planning Modal -->
-<div class="modal" id="diversionModal">
-    <div class="modal-content" style="max-width: 1200px; display: flex; gap: 20px;">
-        <div style="flex: 1;">
-            <div class="modal-header">
-                <h2 class="modal-title">🗺️ Plan Route Omleiding</h2>
-                <button class="close-btn" onclick="closeDiversionModal()">×</button>
-            </div>
+        function initializeLiveData() {
+            console.log('🔄 Starting live data listeners...');
             
-            <div class="form-group">
-                <label class="form-label">Type Blokkering</label>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <button class="quick-btn" id="loadingBtn" onclick="selectDiversionType('loading')" style="background: #E30613;">
-                        🚧 Laden/Lossen
-                    </button>
-                    <button class="quick-btn" id="accidentBtn" onclick="selectDiversionType('accident')">
-                        🚗 Ongeval
-                    </button>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Getroffen Lijn</label>
-                <select class="form-select" id="diversionLine">
-                    <option value="300">Lijn 300 - Haarlem - Schiphol</option>
-                    <option value="397">Lijn 397 - Amsterdam - Schiphol</option>
-                    <option value="340">R-NET 340 - Haarlem - Schiphol</option>
-                    <option value="346">Lijn 346 - Haarlem - Schiphol</option>
-                    <option value="401">Lijn 401 - Eindhoven - Airport</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Locatie Blokkering</label>
-                <input type="text" class="form-input" id="diversionLocation" placeholder="Klik op kaart of vul adres in">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Verwachte Duur</label>
-                <select class="form-select" id="diversionDuration">
-                    <option value="15">15 minuten</option>
-                    <option value="30">30 minuten</option>
-                    <option value="60">1 uur</option>
-                    <option value="120">2+ uur</option>
-                </select>
-            </div>
-
-            <button class="submit-btn" onclick="calculateDiversionRoutes()">
-                Bereken Alternatieve Routes
-            </button>
-
-            <div id="diversionResults" style="display: none; margin-top: 20px;">
-                <h3 style="color: #E30613; margin-bottom: 10px;">Beschikbare Routes</h3>
-                
-                <div class="diversion-route-card" onclick="selectDiversionRoute(1)">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <strong>Route A - Via Parallelweg</strong>
-                        <span style="color: #48bb78;">+8 min</span>
-                    </div>
-                    <div style="font-size: 0.85em; color: #a0aec0;">
-                        12.3 km | 3 haltes overgeslagen
-                    </div>
-                    <div style="background: #dd6b20; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; display: inline-block; margin-top: 5px;">
-                        ⚠️ Smalle weg bij km 4.2
-                    </div>
-                </div>
-
-                <div class="diversion-route-card" onclick="selectDiversionRoute(2)">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <strong>Route B - Via Ringweg</strong>
-                        <span style="color: #48bb78;">+15 min</span>
-                    </div>
-                    <div style="font-size: 0.85em; color: #a0aec0;">
-                        18.7 km | 1 halte overgeslagen
-                    </div>
-                </div>
-
-                <button class="submit-btn" onclick="deployDiversionRoute()">
-                    Deploy Gekozen Route
-                </button>
-            </div>
-        </div>
-
-        <div style="flex: 1; min-height: 500px;">
-            <div id="diversionMap" style="width: 100%; height: 100%; border-radius: 8px;"></div>
-        </div>
-    </div>
-</div>
-
-<style>
-.diversion-route-card {
-    background: rgba(255,255,255,0.05);
-    padding: 12px;
-    border-radius: 6px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: all 0.3s;
-}
-
-.diversion-route-card:hover {
-    border-color: #E30613;
-    background: rgba(227,6,19,0.1);
-}
-
-.diversion-route-card.selected {
-    border-color: #E30613;
-    background: rgba(227,6,19,0.2);
-}
-</style>
-
-<script>
-let diversionMap;
-let diversionMarker;
-let selectedDiversionType = 'loading';
-let selectedDiversionRoute = 1;
-
-function openDiversionPlanner() {
-    document.getElementById('diversionModal').classList.add('show');
-    
-    // Initialize map in modal
-    setTimeout(() => {
-        if (!diversionMap) {
-            diversionMap = L.map('diversionMap').setView([52.3676, 4.9041], 11);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap'
-            }).addTo(diversionMap);
-            
-            // Click to place blockage
-            diversionMap.on('click', function(e) {
-                placeDiversionBlockage(e.latlng);
+            database.ref('buses').on('value', (snapshot) => {
+                const liveBuses = snapshot.val();
+                if (liveBuses) {
+                    updateLiveBuses(liveBuses);
+                    console.log('🚌 Buses updated:', Object.keys(liveBuses).length);
+                }
             });
-        } else {
-            diversionMap.invalidateSize();
+            
+            database.ref('incidents').on('child_added', (snapshot) => {
+                const incident = snapshot.val();
+                addLiveIncident(incident);
+                console.log('⚠️ New incident:', incident.type);
+            });
+            
+            database.ref('emergencies').on('child_added', (snapshot) => {
+                const emergency = snapshot.val();
+                if (emergency.timestamp > Date.now() - 60000) {
+                    incomingEmergencyCall(emergency);
+                    console.log('🚨 EMERGENCY CALL!');
+                }
+            });
         }
-    }, 300);
-}
 
-function closeDiversionModal() {
-    document.getElementById('diversionModal').classList.remove('show');
-}
-
-function selectDiversionType(type) {
-    selectedDiversionType = type;
-    
-    const loadingBtn = document.getElementById('loadingBtn');
-    const accidentBtn = document.getElementById('accidentBtn');
-    
-    if (type === 'loading') {
-        loadingBtn.style.background = '#E30613';
-        accidentBtn.style.background = '#718096';
-    } else {
-        loadingBtn.style.background = '#718096';
-        accidentBtn.style.background = '#E30613';
-    }
-}
-
-function placeDiversionBlockage(latlng) {
-    if (diversionMarker) {
-        diversionMap.removeLayer(diversionMarker);
-    }
-    
-    const icon = selectedDiversionType === 'loading' ? '🚧' : '🚗';
-    
-    diversionMarker = L.marker(latlng, {
-        icon: L.divIcon({
-            html: `<div style="font-size: 32px;">${icon}</div>`,
-            iconSize: [40, 40]
-        })
-    }).addTo(diversionMap);
-    
-    diversionMarker.bindPopup(
-        selectedDiversionType === 'loading' 
-            ? 'Laden/Lossen - Blokkering' 
-            : 'Ongeval - Weg afgesloten'
-    ).openPopup();
-    
-    document.getElementById('diversionLocation').value = 
-        `${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
-}
-
-function calculateDiversionRoutes() {
-    if (!diversionMarker) {
-        alert('Plaats eerst een blokkering op de kaart');
-        return;
-    }
-    
-    // Show results
-    document.getElementById('diversionResults').style.display = 'block';
-    
-    // Draw example alternative routes on map
-    drawAlternativeRoutes();
-}
-
-function drawAlternativeRoutes() {
-    // Example routes (in real implementation, use GraphHopper API)
-    const blockage = diversionMarker.getLatLng();
-    
-    // Route A - Short detour
-    L.polyline([
-        [52.3812, 4.6332],
-        [blockage.lat + 0.02, blockage.lng],
-        [52.3081, 4.7642]
-    ], {
-        color: '#E30613',
-        weight: 4,
-        opacity: 0.7,
-        dashArray: '10, 10'
-    }).addTo(diversionMap).bindPopup('Route A');
-    
-    // Route B - Long detour
-    L.polyline([
-        [52.3812, 4.6332],
-        [blockage.lat + 0.05, blockage.lng + 0.05],
-        [52.3081, 4.7642]
-    ], {
-        color: '#3182ce',
-        weight: 4,
-        opacity: 0.7,
-        dashArray: '10, 10'
-    }).addTo(diversionMap).bindPopup('Route B');
-}
-
-function selectDiversionRoute(routeNum) {
-    selectedDiversionRoute = routeNum;
-    
-    document.querySelectorAll('.diversion-route-card').forEach((card, index) => {
-        if (index + 1 === routeNum) {
-            card.classList.add('selected');
-        } else {
-            card.classList.remove('selected');
+        function updateLiveBuses(liveBuses) {
+            if (!window.busMarkers) {
+                console.log('⏳ Map not ready yet');
+                return;
+            }
+            
+            busMarkers.clearLayers();
+            
+            Object.keys(liveBuses).forEach(busId => {
+                const bus = liveBuses[busId];
+                
+                const iconColor = bus.status === 'stopped' ? '#e53e3e' : 
+                                 bus.status === 'delayed' ? '#dd6b20' : '#38a169';
+                
+                const busIcon = L.divIcon({
+                    className: 'bus-marker-icon',
+                    html: `<div style="background: ${iconColor}; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 9px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">${bus.line}</div>`,
+                    iconSize: [32, 32]
+                });
+                
+                const marker = L.marker([bus.lat, bus.lng], { icon: busIcon })
+                    .bindPopup(`
+                        <div style="font-family: Arial, sans-serif;">
+                            <strong style="color: #E30613; font-size: 14px;">Lijn ${bus.line}</strong><br>
+                            <strong>Status:</strong> ${bus.status}<br>
+                            <strong>Snelheid:</strong> ${bus.speed || 0} km/u<br>
+                            <strong>Passagiers:</strong> ${bus.passengers || 0}<br>
+                            <small style="color: #666;">Live data</small>
+                        </div>
+                    `);
+                
+                busMarkers.addLayer(marker);
+            });
         }
-    });
-}
 
-function deployDiversionRoute() {
-    const line = document.getElementById('diversionLine').value;
-    const duration = document.getElementById('diversionDuration').value;
-    const routeLetter = String.fromCharCode(64 + selectedDiversionRoute);
-    
-    if (confirm(
-        `Omleiding deployen?\n\n` +
-        `Lijn: ${line}\n` +
-        `Route: ${routeLetter}\n` +
-        `Duur: ${duration} min\n\n` +
-        `Chauffeurs worden direct geïnformeerd.`
-    )) {
-        // Save to Firebase
-        database.ref('diversions').push({
-            line: line,
-            route: routeLetter,
-            duration: duration,
-            type: selectedDiversionType,
-            location: document.getElementById('diversionLocation').value,
-            timestamp: Date.now()
+        function addLiveIncident(incident) {
+            const incidentsList = document.getElementById('incidentsList');
+            if (!incidentsList) {
+                console.log('⚠️ Incidents list not found');
+                return;
+            }
+            
+            const incidentDiv = document.createElement('div');
+            incidentDiv.className = `incident-item ${incident.priority || 'info'}`;
+            incidentDiv.style.animation = 'slideIn 0.3s ease-out';
+            incidentDiv.innerHTML = `
+                <div class="incident-header">
+                    <span class="incident-type">${incident.type}</span>
+                    <span class="incident-time" style="background: #38a169; color: white; padding: 2px 8px; border-radius: 3px; font-size: 0.75em;">🔴 LIVE</span>
+                </div>
+                <div><strong>${incident.line}</strong> - ${incident.description}</div>
+                <div style="font-size: 0.8em; color: #a0aec0; margin-top: 4px;">${incident.location}</div>
+            `;
+            
+            incidentsList.insertBefore(incidentDiv, incidentsList.firstChild);
+            
+            while (incidentsList.children.length > 10) {
+                incidentsList.removeChild(incidentsList.lastChild);
+            }
+        }
+
+        window.addEventListener('load', function() {
+            console.log('📱 Page loaded, waiting for map...');
+            setTimeout(() => {
+                initializeLiveData();
+            }, 2000);
         });
-        
-        alert(
-            `✅ OMLEIDING GEACTIVEERD\n\n` +
-            `→ Chauffeurs geïnformeerd\n` +
-            `→ Navigatie bijgewerkt\n` +
-            `→ RBS melding aangemaakt\n` +
-            `→ Planning aangepast`
-        );
-        
-        closeDiversionModal();
-    }
-}
-</script>
+    </script>
 </body>
-
 </html>
-
