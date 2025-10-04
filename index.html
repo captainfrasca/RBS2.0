@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RBS 2.0 - ROV Training Module (Stress Shift)</title>
+  <title>RBS 2.0 - ROV Training Module</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
@@ -29,7 +29,6 @@
     .workspace-tab.active{background:#E30613;font-weight:bold}
     .workspace-content{flex:1;overflow:hidden;position:relative}
 
-    /* Map */
     #mapWrapper{position:relative;height:100%;width:100%}
     #mapContainer{position:absolute;inset:0}
     .map-overlay-info{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.8);padding:10px 15px;border-radius:8px;border:1px solid #E30613;z-index:1000;font-size:.85em}
@@ -80,7 +79,6 @@
     .start-btn{padding:15px 40px;background:#E30613;border:none;border-radius:8px;color:white;font-size:1.2em;font-weight:bold;cursor:pointer;transition:.3s}
     .start-btn:hover{background:#cc0510;transform:scale(1.05)}
 
-    /* Notification animation that was referenced but missing */
     @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
   </style>
 </head>
@@ -93,7 +91,7 @@
     <div class="header-stats">
       <div class="stat-badge ok"><span>✓</span><span id="activeCount">847</span><span>Actief</span></div>
       <div class="stat-badge warning"><span>⚠️</span><span id="warningCount">23</span><span>Vertraagd</span></div>
-      <div class="stat-badge critical"><span>🔴</span><span id="criticalCount">5</span><span>Storing</span></div>
+      <div class="stat-badge critical"><span>🔴</span><span id="criticalCount">0</span><span>Nood</span></div>
     </div>
     <div style="font-size:.85em;color:#a0aec0">
       <div style="font-weight:bold">Shift: <span id="shiftTime">00:00</span></div>
@@ -132,44 +130,43 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // --- Simple alarm (note: may be blocked until user gesture in some browsers)
+    // ---- Incident distributie & limieten
+    const INCIDENT_WEIGHTS = { P1: 0.12, P2: 0.48, P3: 0.40 }; // ~12% P1
+    const MAX_P1_IN_QUEUE = 1;              // max 1 wachtende P1
+    const P1_COOLDOWN_MS  = 2 * 60 * 1000;  // min. 2 min tussen P1's
+
+    // ---- Alarm (kan user gesture vereisen per browser)
     function playEmergencyAlarm(){
-      try{
-        const Ctx=window.AudioContext||window.webkitAudioContext; if(!Ctx) return;
-        const ctx=new Ctx();
+      try{const Ctx=window.AudioContext||window.webkitAudioContext; if(!Ctx) return; const ctx=new Ctx();
         function tone(f,d,t){const o=ctx.createOscillator(),g=ctx.createGain();o.type='square';o.frequency.value=f;o.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(.3,t);g.gain.exponentialRampToValueAtTime(.01,t+d);o.start(t);o.stop(t+d);} 
         const now=ctx.currentTime; tone(800,.2,now); tone(600,.2,now+.25); tone(800,.2,now+.5); tone(600,.2,now+.75);
       }catch(e){}
     }
 
-    // --- Incident definitions (subset shown unchanged from your version) 
+    // ---- Voorbeeldincidenten (ingekort; voeg eigen extra's toe)
     const INCIDENTS={
       noodoproep1:{type:'NOOD',priority:1,caller:'Chauffeur Ahmed (Lijn 300)',title:'🚨 MEDISCHE NOOD - REANIMATIE',location:'Haarlemmerplein, Amsterdam',coords:[52.3862,4.8769],conversation:[{sender:'Chauffeur',text:'ROV! SPOED! Passagier ligt op de grond, geen ademhaling! Iemand probeert te reanimeren!'}],responses:[{text:'Ahmed, laat direct 112 bellen! Ik schakel S&V in, MER onderweg, ritverval lijn 300 actief. Blijf bij slachtoffer!',correct:true,feedback:'Perfect! Alle noodprocedures direct ingezet.',points:150},{text:'Rij met spoed naar het dichtstbijzijnde ziekenhuis!',correct:false,feedback:'FOUT! Nooit vervoeren bij reanimatie. 112 ter plaatse!',points:-100},{text:'Is er een AED in de buurt? Ga die halen!',correct:false,feedback:'Verkeerde volgorde! Eerst 112, dan pas AED.',points:-50}].sort(()=>Math.random()-.5)},
-      noodoproep2:{type:'NOOD',priority:1,caller:'Chauffeur Lisa (Lijn 81)',title:'🚨 AGRESSIE - WAPEN GEZIEN',location:'Station Zuid',coords:[52.3389,4.8728],conversation:[{sender:'Chauffeur',text:'[PANIEK] Man met mes bedreigt passagiers! Iedereen schreeuwt! WAT MOET IK DOEN?!'}],responses:[{text:'Probeer de man rustig te praten, misschien kalmeert hij.',correct:false,feedback:'LEVENSGEVAARLIJK! Nooit confronteren bij wapen!',points:-150},{text:'LISA: Bus STOPPEN, deuren open, iedereen eruit! Bel 112! Ik alarmeer politie + S&V. MER onderweg. Ritverval actief. Ga NIET in discussie!',correct:true,feedback:'Uitstekend! Veiligheid eerst, alle nooddiensten gealarmeerd.',points:150},{text:'Blijf doorrijden naar het eindpunt, daar staat beveiliging.',correct:false,feedback:'FOUT! Direct stoppen bij wapendreiging!',points:-100}].sort(()=>Math.random()-.5)},
-      aanrijding1:{type:'NOOD',priority:1,caller:'Chauffeur Marco (Lijn 340)',title:'🚨 AANRIJDING - BEKNELLING',location:'Kruising Overtoom',coords:[52.3592,4.8661],conversation:[{sender:'Chauffeur',text:'HELP! Frontale botsing met auto! Bestuurder zit bekneld, bloedt hevig! Mijn passagiers gillen!'}],responses:[{text:'Marco: Bel 112 voor ambulance/brandweer! Ik alarmeer politie + S&V. MER met vervangbus onderweg. Check passagiers! Ritverval lijn 340.',correct:true,feedback:'Perfect protocol bij ernstig ongeval met beknelling.',points:150},{text:'Probeer de bestuurder uit de auto te krijgen.',correct:false,feedback:'NOOIT! Bij beknelling wacht je op brandweer!',points:-150},{text:'Maak eerst foto\'s voor de verzekering.',correct:false,feedback:'Prioriteit fout! Eerst hulpverlening!',points:-100}].sort(()=>Math.random()-.5)},
-      brand1:{type:'NOOD',priority:1,caller:'Chauffeur Fatima (Lijn 62)',title:'🔥 BRAND IN BUS',location:'Leidseplein',coords:[52.3642,4.8827],conversation:[{sender:'Chauffeur',text:'VUUR IN MOTORCOMPARTIMENT! Vlammen komen naar binnen! Bus vol mensen!'}],responses:[{text:'Fatima: IEDEREEN ERUIT! Motor af! Bel 112! Ik alarmeer brandweer, politie, S&V. MER komt. Ritverval lijn 62!',correct:true,feedback:'Perfect! Evacuatie prioriteit 1 bij brand.',points:150},{text:'Gebruik de brandblusser en probeer te blussen!',correct:false,feedback:'Te gevaarlijk! Eerst evacueren!',points:-100},{text:'Rij snel naar een veilige plek.',correct:false,feedback:'NOOIT doorrijden bij brand!',points:-150}].sort(()=>Math.random()-.5)},
       voertuigdefect1:{type:'VD',priority:2,caller:'Chauffeur Sarah (Lijn 300)',title:'Motor defect - A10',location:'A10 Noord',coords:[52.4014,4.9086],conversation:[{sender:'Chauffeur',text:'Motor afgeslagen op snelweg! Sta op vluchtstrook. 45 passagiers, sommigen in paniek.'}],responses:[{text:'Probeer de motor nog een paar keer.',correct:false,feedback:'Tijdverlies op gevaarlijke plek!',points:-20},{text:'Sarah: Waarschuwingslichten aan! MER met vervangbus onderweg. Monteur gealarmeerd. Rijkswaterstaat ingelicht. Ritverval actief. Houd passagiers rustig!',correct:true,feedback:'Uitstekend! Alle partijen geïnformeerd, veiligheid voorop.',points:100},{text:'Laat iedereen uitstappen achter de vangrail.',correct:false,feedback:'Gevaarlijk op snelweg! Alleen bij direct gevaar.',points:-50}].sort(()=>Math.random()-.5)},
       busvol1:{type:'VV',priority:3,caller:'Chauffeur Kevin (Lijn 397)',title:'Overvolle bus Schiphol',location:'Schiphol Plaza',coords:[52.3105,4.7683],conversation:[{sender:'Chauffeur',text:'Stampvol! 30+ mensen blijven staan. Vlucht net geland, iedereen boos.'}],responses:[{text:'Check dienstregeling volgende 397. Bij >10min wachttijd: extra bus inzetten. Passagiers informeren. Noteer voor capaciteitsanalyse.',correct:true,feedback:'Goede aanpak! Service en data-analyse.',points:80},{text:'Ze moeten maar wachten.',correct:false,feedback:'Slechte service! Schiphol is prioriteit.',points:-40},{text:'Prop er nog wat mensen bij.',correct:false,feedback:'Illegaal en onveilig!',points:-80}].sort(()=>Math.random()-.5)}
     };
 
     class ROVTrainingSystem{
       constructor(){
-        this.score=0;this.incidentsHandled=0;this.currentIncident=null;this.incidentQueue=[];this.gameState='start';this.startTime=null;this.stressLevel=0;
-        this._mainTimerId=null;this._callTimerId=null;this._incidentTimerHandle=null;
+        this.score=0; this.incidentsHandled=0; this.currentIncident=null; this.incidentQueue=[]; this.gameState='start'; this.startTime=null; this.stressLevel=0;
+        this._mainTimerId=null; this._callTimerId=null; this._incidentTimerHandle=null; this.lastP1Time=0;
         // Map
-        this.map=null;this.mapMarkers=[];
+        this.map=null; this.mapMarkers=[];
       }
 
-      start(){this.showStartScreen();}
+      start(){ this.showStartScreen(); }
 
       showStartScreen(){
         const ws=document.getElementById('workspaceContent');
         ws.innerHTML=`<div class="start-screen">
           <div class="start-title">ROV Training - REALISTISCHE SHIFT</div>
-          <div class="start-description"><strong>⚠️ WAARSCHUWING:</strong> Deze training simuleert een echte ROV shift!<br><br>
-          • Incidenten komen CONTINU binnen<br>• Prioriteit 1 = DIRECT handelen (met ALARM)<br>• Stress neemt toe bij wachtende incidenten<br>• Foute beslissingen hebben grote gevolgen<br>• Shift duurt tot alle incidenten afgehandeld zijn<br><br>
-          <strong>Doel:</strong> Handel 10+ incidenten met zo min mogelijk fouten!</div>
-          <button class="start-btn" onclick="game.startShift()">Start Stressvolle Shift</button>
+          <div class="start-description"><strong>⚠️</strong> Incidenten komen continu binnen. P1 wordt beperkt en gemaskeerd in de wachtrij/kaart. Bij oppakken tonen we direct ritgegevens.<br><br>
+          Doel: handel ≥10 incidenten met zo min mogelijk fouten.</div>
+          <button class="start-btn" onclick="game.startShift()">Start Shift</button>
         </div>`;
       }
 
@@ -180,18 +177,25 @@
         this.updateQueue(); this.showWaitingScreen(); this._startMainTimer();
       }
 
-      generateInitialIncidents(){
-        const keys=Object.keys(INCIDENTS);
-        for(let i=0;i<2;i++){const k=keys[Math.floor(Math.random()*keys.length)];this._addIncident(k);} }
+      // ---- Incident selectie (weighted, limiet, cooldown)
+      _roulettePriority(){ const r=Math.random(); const p1=INCIDENT_WEIGHTS.P1; const p2=p1+INCIDENT_WEIGHTS.P2; if(r<p1) return 1; if(r<p2) return 2; return 3; }
 
       _startIncidentStreamVariable(){
         const scheduleNext=()=>{
           if(this.gameState!=='playing') return;
           const delay=15000+Math.random()*15000; // 15–30s
           this._incidentTimerHandle=setTimeout(()=>{
-            if(this.incidentQueue.length<8){const keys=Object.keys(INCIDENTS);const k=keys[Math.floor(Math.random()*keys.length)];this._addIncident(k);
-              if(INCIDENTS[k].priority===1){playEmergencyAlarm();this._notify('🚨 NOODOPROEP BINNENGEKOMEN!',true);} else {this._notify('Nieuw incident in wachtrij!');}}
-            const urgentWaiting=this.incidentQueue.filter(i=>i.priority===1).length; if(urgentWaiting>0){this.stressLevel+=urgentWaiting*5;this._updateStressIndicator();}
+            if(this.incidentQueue.length<8){
+              let desired=this._roulettePriority();
+              const p1Wait=this.incidentQueue.filter(i=>i.priority===1).length;
+              const tooSoon=(Date.now()-this.lastP1Time)<P1_COOLDOWN_MS;
+              if(desired===1 && (p1Wait>=MAX_P1_IN_QUEUE || tooSoon)){
+                desired=(Math.random()< (INCIDENT_WEIGHTS.P2/(INCIDENT_WEIGHTS.P2+INCIDENT_WEIGHTS.P3)))?2:3;
+              }
+              const pool=Object.keys(INCIDENTS).filter(k=>INCIDENTS[k].priority===desired);
+              if(pool.length){ const k=pool[Math.floor(Math.random()*pool.length)]; this._addIncident(k); if(desired===1){ playEmergencyAlarm(); this.lastP1Time=Date.now(); this._notify('🚨 NOODOPROEP BINNEN!',true); } else { this._notify('Nieuw incident in wachtrij'); } }
+            }
+            const urgentWaiting=this.incidentQueue.filter(i=>i.priority===1).length; if(urgentWaiting>0){ this.stressLevel+=urgentWaiting*5; this._updateStressIndicator(); }
             scheduleNext();
           },delay);
         };
@@ -199,119 +203,64 @@
         scheduleNext();
       }
 
-      _addIncident(key){
-        const inc={...INCIDENTS[key],id:'inc_'+Date.now()+'_'+Math.random().toString(36).slice(2,9),addedTime:Date.now()};
-        this.incidentQueue.push(inc); this._sortQueue(); this.updateQueue(); this._renderMarkers();
+      generateInitialIncidents(){
+        const keys=Object.keys(INCIDENTS); const want=3; let p1Added=0;
+        for(let i=0;i<want;i++){
+          let target=this._roulettePriority();
+          if(target===1 && p1Added===1) target=2; // maximaal 1 P1 bij start
+          const pool=keys.filter(k=>INCIDENTS[k].priority===target);
+          if(!pool.length) continue; const k=pool[Math.floor(Math.random()*pool.length)];
+          this._addIncident(k); if(target===1){ p1Added=1; this.lastP1Time=Date.now(); }
+        }
       }
 
-      _sortQueue(){this.incidentQueue.sort((a,b)=>a.priority!==b.priority?a.priority-b.priority:a.addedTime-b.addedTime);} 
+      _addIncident(key){ const inc={...INCIDENTS[key],id:'inc_'+Date.now()+'_'+Math.random().toString(36).slice(2,9),addedTime:Date.now()}; this.incidentQueue.push(inc); this._sortQueue(); this.updateQueue(); this._renderMarkers(); }
+      _sortQueue(){ this.incidentQueue.sort((a,b)=>a.priority!==b.priority?a.priority-b.priority:a.addedTime-b.addedTime); }
 
-      _notify(message,urgent=false){
-        const n=document.createElement('div');
-        n.style.cssText=`position:fixed;top:80px;right:20px;background:${urgent?'#e53e3e':'#E30613'};color:#fff;padding:15px 20px;border-radius:8px;box-shadow:0 4px 10px rgba(0,0,0,.5);z-index:10000;font-weight:bold;animation:slideInRight .5s ${urgent?', urgentPulse 1s infinite':''}`;
-        n.textContent=message; document.body.appendChild(n); setTimeout(()=>{n.style.opacity='0'; setTimeout(()=>n.remove(),500);},3000);
-      }
+      _notify(message,urgent=false){ const n=document.createElement('div'); n.style.cssText=`position:fixed;top:80px;right:20px;background:${urgent?'#e53e3e':'#E30613'};color:#fff;padding:15px 20px;border-radius:8px;box-shadow:0 4px 10px rgba(0,0,0,.5);z-index:10000;font-weight:bold;animation:slideInRight .5s ${urgent?', urgentPulse 1s infinite':''}`; n.textContent=message; document.body.appendChild(n); setTimeout(()=>{n.style.opacity='0'; setTimeout(()=>n.remove(),500);},2500); }
+      _updateStressIndicator(){ const critical=document.getElementById('criticalCount'); if(critical) critical.textContent=this.incidentQueue.filter(i=>i.priority===1).length; document.body.style.background=this.stressLevel>50?'#1a0a0a':'#0f1419'; }
 
-      _updateStressIndicator(){
-        const critical=document.getElementById('criticalCount'); if(critical) critical.textContent=this.incidentQueue.filter(i=>i.priority===1).length;
-        document.body.style.background=this.stressLevel>50?'#1a0a0a':'#0f1419';
-      }
+      showWaitingScreen(){ const urgent=this.incidentQueue.filter(i=>i.priority===1).length; document.getElementById('workspaceContent').innerHTML=`<div class="waiting-screen"><div style="font-size:4em;color:${urgent>0?'#e53e3e':'#718096'}">📞</div><h2>${urgent>0?'⚠️ '+urgent+' NOODOPROEP WACHT!':'Selecteer een incident'}</h2><p>Wachtrij: ${this.incidentQueue.length} incidenten</p></div>`; }
 
-      showWaitingScreen(){
-        const urgent=this.incidentQueue.filter(i=>i.priority===1).length;
-        document.getElementById('workspaceContent').innerHTML=`<div class="waiting-screen">
-          <div style="font-size:4em;color:${urgent>0?'#e53e3e':'#718096'}">📞</div>
-          <h2>${urgent>0?'⚠️ '+urgent+' NOODOPROEPEN WACHTEN!':'Selecteer een incident'}</h2>
-          <p>Wachtrij: ${this.incidentQueue.length} incidenten</p>
-        </div>`;
-      }
+      updateQueue(){ const list=document.getElementById('queueList'); const count=document.getElementById('queueCount'); if(!list||!count) return; count.textContent=this.incidentQueue.length; if(this.incidentQueue.length===0){ list.innerHTML='<div style="text-align:center;color:#48bb78;padding:20px">✓ Wachtrij leeg!</div>'; return; } const now=Date.now(); list.innerHTML=this.incidentQueue.map(inc=>{ const wt=Math.floor((now-inc.addedTime)/1000); const disp=wt>60?Math.floor(wt/60)+' min':wt+' sec'; const title = inc.priority===1 ? 'NOODOPROEP – details onbekend' : inc.title; return `<div class="incident-card priority-${inc.priority}"><div class="incident-header"><span class="incident-type">${inc.type}</span><span class="incident-time" style="color:${wt>120?'#e53e3e':'#718096'}">⏱️ ${disp}</span></div><div class="incident-title">${title}</div><div class="incident-location">📍 ${inc.location}</div><button class="accept-btn" onclick="game.acceptIncident('${inc.id}')">OPPAKKEN</button></div>`; }).join(''); }
 
-      updateQueue(){
-        const list=document.getElementById('queueList'); const count=document.getElementById('queueCount'); if(!list||!count) return;
-        count.textContent=this.incidentQueue.length;
-        if(this.incidentQueue.length===0){list.innerHTML='<div style="text-align:center;color:#48bb78;padding:20px">✓ Wachtrij leeg!</div>'; return;}
-        const now=Date.now();
-        list.innerHTML=this.incidentQueue.map(inc=>{const wt=Math.floor((now-inc.addedTime)/1000); const disp=wt>60?Math.floor(wt/60)+' min':wt+' sec';
-          return `<div class="incident-card priority-${inc.priority}">
-            <div class="incident-header"><span class="incident-type">${inc.type}</span><span class="incident-time" style="color:${wt>120?'#e53e3e':'#718096'}">⏱️ ${disp}</span></div>
-            <div class=\"incident-title\">${inc.priority===1 ? 'NOODOPROEP \u2013 details onbekend' : inc.title}<\/div>
-            <div class="incident-location">📍 ${inc.location}</div>
-            <button class="accept-btn" onclick="game.acceptIncident('${inc.id}')">OPPAKKEN</button>
-          </div>`;}).join('');
-      }
+      acceptIncident(id){ const inc=this.incidentQueue.find(i=>i.id===id); if(!inc) return; const p1Wait=this.incidentQueue.some(i=>i.priority===1); if(p1Wait && inc.priority>1){ if(!confirm('⚠️ Er wacht een NOODOPROEP! Toch deze melding oppakken?')) return; this.score-=50; this._notify('⚠️ -50 punten: Noodoproep genegeerd!',true); } this.currentIncident=inc; this.incidentQueue=this.incidentQueue.filter(i=>i.id!==id); this.updateQueue(); this.displayIncident(); if(inc.priority===1) playEmergencyAlarm(); this._renderMarkers(); }
 
-      acceptIncident(id){
-        const inc=this.incidentQueue.find(i=>i.id===id); if(!inc) return;
-        const urgentWaiting=this.incidentQueue.some(i=>i.priority===1);
-        if(urgentWaiting && inc.priority>1){ if(!confirm('⚠️ Er wacht een NOODOPROEP! Toch deze melding oppakken?')) return; this.score-=50; this._notify('⚠️ -50 punten: Noodoproep genegeerd!',true); }
-        this.currentIncident=inc; this.incidentQueue=this.incidentQueue.filter(i=>i.id!==id); this.updateQueue(); this.displayIncident(); if(inc.priority===1) playEmergencyAlarm(); this._renderMarkers();
-      }
+      // ---- Ritgegevens helpers
+      _parseLineNumber(str){ const m=/Lijn\s+(\d+)/i.exec(str||''); return m?m[1]:null; }
+      _buildTripData(incident){ const lijn=this._parseLineNumber(incident.caller)||'—'; const now=new Date(); const pad=n=>String(n).padStart(2,'0'); const fmt=d=>`${pad(d.getHours())}:${pad(d.getMinutes())}`; const begin=new Date(now.getTime()-10*60000); const eind=new Date(now.getTime()+20*60000); return { lijn, rit:Math.floor(6000+Math.random()*500), beginTijd:fmt(begin), eindTijd:fmt(eind), startplaats:(incident.location.split(',')[0]||'—'), eindplaats:'Schiphol Noord', omloop:Math.floor(750000+Math.random()*200), dienstnr:Math.floor(1200000+Math.random()*999), chauffeur:incident.caller.replace('Chauffeur ','') , vestiging:'Schiphol Noord (ZB)', voertuig:'AVL VDL 18' }; }
+      _renderTripCard(trip){ return `<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px;margin:12px 20px 0;">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:.9em">
+          <div><strong>Lijn</strong> ${trip.lijn}</div>
+          <div><strong>Rit</strong> ${trip.rit}</div>
+          <div><strong>Begin</strong> ${trip.beginTijd}</div>
+          <div><strong>Einde</strong> ${trip.eindTijd}</div>
+          <div><strong>Omloop</strong> ${trip.omloop}</div>
+          <div><strong>Dienstnr</strong> ${trip.dienstnr}</div>
+          <div><strong>Chauffeur</strong> ${trip.chauffeur}</div>
+          <div><strong>Vestiging</strong> ${trip.vestiging}</div>
+          <div><strong>Voertuig</strong> ${trip.voertuig}</div>
+        </div>
+        <div style="margin-top:6px;color:#a0aec0">${trip.startplaats} → ${trip.eindplaats}</div>
+      </div>`; }
 
-      displayIncident(){
-        const inc=this.currentIncident; const ws=document.getElementById('workspaceContent'); if(!inc||!ws) return;
-        const bg=inc.priority===1?'background:linear-gradient(135deg,#2a0a0a,#1a0a0a);':'';
-        ws.innerHTML=`<div class="conversation-view" style="${bg}">
-          <div class="conversation-header" style="${inc.priority===1?'background:#8B0000;':''}">
-            <div class="caller-info">${inc.priority===1?'🚨 NOODOPROEP - ':''}${inc.caller}</div>
-            <div class="call-timer" id="callTimer">00:00</div>
-          </div>
-          <div class="conversation-messages" id="convMessages">
-            ${inc.conversation.map(m=>`<div class="message from-caller" style="${inc.priority===1?'border-left-color:#e53e3e;animation:urgentPulse 1s infinite;':''}"><div class="message-sender">${m.sender}</div><div style="font-size:${inc.priority===1?'1.1em':'1em'}">${m.text}</div></div>`).join('')}
-          </div>
-          <div class="response-options">
-            ${inc.responses.map((r,idx)=>`<button class="response-btn" onclick="game.selectResponse(${idx})">${r.text}</button>`).join('')}
-          </div>
-        </div>`;
-        this._startCallTimer();
-      }
+      displayIncident(){ const inc=this.currentIncident; const ws=document.getElementById('workspaceContent'); if(!inc||!ws) return; const bg=inc.priority===1?'background:linear-gradient(135deg,#2a0a0a,#1a0a0a);':''; const trip=this._buildTripData(inc); ws.innerHTML=`<div class="conversation-view" style="${bg}"><div class="conversation-header" style="${inc.priority===1?'background:#8B0000;':''}"><div class="caller-info">${inc.priority===1?'🚨 NOODOPROEP - ':''}${inc.caller}</div><div class="call-timer" id="callTimer">00:00</div></div>${this._renderTripCard(trip)}<div class="conversation-messages" id="convMessages">${inc.conversation.map(m=>`<div class=\"message from-caller\" style=\"${inc.priority===1?'border-left-color:#e53e3e;animation:urgentPulse 1s infinite;':''}\"><div class=\"message-sender\">${m.sender}</div><div style=\"font-size:${inc.priority===1?'1.1em':'1em'}\">${m.text}</div></div>`).join('')}</div><div class="response-options">${inc.responses.map((r,idx)=>`<button class=\"response-btn\" onclick=\"game.selectResponse(${idx})\">${r.text}</button>`).join('')}</div></div>`; this._startCallTimer(); }
 
-      selectResponse(index){
-        const r=this.currentIncident.responses[index]; const respTime=Date.now()-this.currentIncident.addedTime;
-        if(this.currentIncident.priority===1 && respTime>60000){this.score-=25; this._notify('⚠️ -25 punten: Te trage response bij noodoproep!');}
-        this.score+=r.points; document.getElementById('score').textContent=this.score;
-        document.querySelectorAll('.response-btn').forEach((b,i)=>{b.disabled=true; if(this.currentIncident.responses[i].correct) b.classList.add('correct'); else if(i===index && !r.correct) b.classList.add('incorrect');});
-        const box=document.getElementById('convMessages'); box.innerHTML+=`<div class="feedback ${r.correct?'':'negative'}" style="font-size:1.1em"><strong>${r.correct?'✓ CORRECT PROTOCOL!':'✗ FOUT PROTOCOL!'}</strong><br>${r.feedback}<br><strong>Punten: ${r.points>0?'+':''}${r.points}</strong></div>`;
-        setTimeout(()=>{document.querySelector('.response-options').innerHTML=`<button class="start-btn" onclick="game.nextIncident()">Volgende (${this.incidentQueue.length} wachtend)</button>`;},900);
-        this.incidentsHandled++; this.updateQueue();
-      }
+      selectResponse(index){ const r=this.currentIncident.responses[index]; const respTime=Date.now()-this.currentIncident.addedTime; if(this.currentIncident.priority===1 && respTime>60000){ this.score-=25; this._notify('⚠️ -25 punten: Te trage response bij noodoproep!'); } this.score+=r.points; document.getElementById('score').textContent=this.score; document.querySelectorAll('.response-btn').forEach((b,i)=>{ b.disabled=true; if(this.currentIncident.responses[i].correct) b.classList.add('correct'); else if(i===index && !r.correct) b.classList.add('incorrect'); }); const box=document.getElementById('convMessages'); box.innerHTML+=`<div class="feedback ${r.correct?'':'negative'}" style="font-size:1.1em"><strong>${r.correct?'✓ CORRECT PROTOCOL!':'✗ FOUT PROTOCOL!'}</strong><br>${r.feedback}<br><strong>Punten: ${r.points>0?'+':''}${r.points}</strong></div>`; setTimeout(()=>{ document.querySelector('.response-options').innerHTML=`<button class="start-btn" onclick="game.nextIncident()">Volgende (${this.incidentQueue.length} wachtend)</button>`; },900); this.incidentsHandled++; this.updateQueue(); }
 
-      _startCallTimer(){ if(this._callTimerId) clearInterval(this._callTimerId); const el=document.getElementById('callTimer'); const s=Date.now(); this._callTimerId=setInterval(()=>{ if(!this.currentIncident){clearInterval(this._callTimerId);return;} const e=Date.now()-s; const m=Math.floor(e/60000),sec=Math.floor((e%60000)/1000); el.textContent=String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0'); },1000);} 
+      _startCallTimer(){ if(this._callTimerId) clearInterval(this._callTimerId); const el=document.getElementById('callTimer'); const s=Date.now(); this._callTimerId=setInterval(()=>{ if(!this.currentIncident){clearInterval(this._callTimerId);return;} const e=Date.now()-s; const m=Math.floor(e/60000),sec=Math.floor((e%60000)/1000); el.textContent=String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0'); },1000); }
 
       nextIncident(){ this.currentIncident=null; if(this._callTimerId) clearInterval(this._callTimerId); if(this.incidentQueue.length>0) this.showWaitingScreen(); else if(this.incidentsHandled>=10) this.endShift(); else this.showWaitingScreen(); this._renderMarkers(); }
 
-      _startMainTimer(){ if(this._mainTimerId) clearInterval(this._mainTimerId); this._mainTimerId=setInterval(()=>{ if(this.gameState!=='playing') return; const e=Date.now()-this.startTime; const m=Math.floor(e/60000),s=Math.floor((e%60000)/1000); document.getElementById('shiftTime').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); this.updateQueue(); },1000);} 
+      _startMainTimer(){ if(this._mainTimerId) clearInterval(this._mainTimerId); this._mainTimerId=setInterval(()=>{ if(this.gameState!=='playing') return; const e=Date.now()-this.startTime; const m=Math.floor(e/60000),s=Math.floor((e%60000)/1000); document.getElementById('shiftTime').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); this.updateQueue(); },1000); }
 
-      endShift(){ this.gameState='ended'; if(this._mainTimerId) clearInterval(this._mainTimerId); if(this._incidentTimerHandle) clearTimeout(this._incidentTimerHandle); if(this._callTimerId) clearInterval(this._callTimerId);
-        const max=this.incidentsHandled*150; const pct=max?Math.round((this.score/max)*100):0; const grade=pct>=90?'A+':pct>=80?'A':pct>=70?'B':pct>=60?'C':'D';
-        const ws=document.getElementById('workspaceContent'); ws.innerHTML=`<div class="start-screen">
-          <div class="start-title">SHIFT EVALUATIE</div>
-          <div style="font-size:3em;color:${(grade==='A+'||grade==='A')?'#48bb78':'#E30613'};margin:20px 0">${this.score} punten</div>
-          <div style="font-size:2em;margin-bottom:20px">Cijfer: ${grade}</div>
-          <div class="start-description"><strong>Statistieken:</strong><br>
-            • Incidenten afgehandeld: ${this.incidentsHandled}<br>
-            • Gemiddelde score: ${this.incidentsHandled?Math.round(this.score/this.incidentsHandled):0} per incident<br>
-            • Shift duur: ${Math.floor((Date.now()-this.startTime)/60000)} minuten<br><br>
-            <strong>Beoordeling:</strong><br>
-            ${grade==='A+'?'UITSTEKEND! Je bent een top ROV\'er!':grade==='A'?'Zeer goed! Je kunt een echte shift aan!':grade==='B'?'Goed werk! Met wat extra training word je top!':grade==='C'?'Voldoende, maar let beter op noodprocedures.':'Onvoldoende. Meer training nodig, vooral noodprotocollen!'}
-          </div>
-          <button class="start-btn" onclick="location.reload()">Nieuwe Shift</button>
-        </div>`;
-      }
+      endShift(){ this.gameState='ended'; if(this._mainTimerId) clearInterval(this._mainTimerId); if(this._incidentTimerHandle) clearTimeout(this._incidentTimerHandle); if(this._callTimerId) clearInterval(this._callTimerId); const max=this.incidentsHandled*150; const pct=max?Math.round((this.score/max)*100):0; const grade=pct>=90?'A+':pct>=80?'A':pct>=70?'B':pct>=60?'C':'D'; const ws=document.getElementById('workspaceContent'); ws.innerHTML=`<div class="start-screen"><div class="start-title">SHIFT EVALUATIE</div><div style="font-size:3em;color:${(grade==='A+'||grade==='A')?'#48bb78':'#E30613'};margin:20px 0">${this.score} punten</div><div style="font-size:2em;margin-bottom:20px">Cijfer: ${grade}</div><div class="start-description"><strong>Statistieken:</strong><br>• Incidenten afgehandeld: ${this.incidentsHandled}<br>• Gemiddelde score: ${this.incidentsHandled?Math.round(this.score/this.incidentsHandled):0} per incident<br>• Shift duur: ${Math.floor((Date.now()-this.startTime)/60000)} minuten<br></div><button class="start-btn" onclick="location.reload()">Nieuwe Shift</button></div>`; }
 
-      // --- Map logic
-      showMap(){
-        const ws=document.getElementById('workspaceContent');
-        ws.innerHTML=`<div id="mapWrapper"><div id="mapContainer"></div><div class="map-overlay-info">Klik op een marker voor details. Incidenten in rood/oranje/blauw = P1/P2/P3</div></div>`;
-        if(!this.map){ this.map=L.map('mapContainer',{zoomControl:true}); this.map.setView([52.2,5.3],8); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap-bijdragers'}).addTo(this.map);} else { this.map.invalidateSize(); }
-        this._renderMarkers();
-      }
-
-      _renderMarkers(){ if(!this.map) return; this.mapMarkers.forEach(m=>this.map.removeLayer(m)); this.mapMarkers=[]; const all=[...this.incidentQueue]; if(this.currentIncident) all.push(this.currentIncident); all.forEach(inc=>{ const m=L.circleMarker(inc.coords,{radius:8,weight:2,fillOpacity:.8,color:inc.priority===1?'#e53e3e':inc.priority===2?'#f6ad55':'#3182ce'}).addTo(this.map);
-          const puTitle = inc.priority===1 ? 'Noodoproep \u2013 details onbekend' : inc.title;
-          m.bindPopup(`<strong>${puTitle}</strong><br>${inc.location}<br><em>Prioriteit ${inc.priority}</em>`); m.on('click',()=>{ this.map.setView(inc.coords,14,{animate:true}); m.openPopup(); }); this.mapMarkers.push(m); }); }
+      // ---- Map
+      showMap(){ const ws=document.getElementById('workspaceContent'); ws.innerHTML=`<div id="mapWrapper"><div id="mapContainer"></div><div class="map-overlay-info">P1/P2/P3 markers: rood/oranje/blauw. P1-titel gemaskeerd.</div></div>`; if(!this.map){ this.map=L.map('mapContainer',{zoomControl:true}); this.map.setView([52.2,5.3],8); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap-bijdragers'}).addTo(this.map); } else { this.map.invalidateSize(); } this._renderMarkers(); }
+      _renderMarkers(){ if(!this.map) return; this.mapMarkers.forEach(m=>this.map.removeLayer(m)); this.mapMarkers=[]; const all=[...this.incidentQueue]; if(this.currentIncident) all.push(this.currentIncident); all.forEach(inc=>{ const m=L.circleMarker(inc.coords,{radius:8,weight:2,fillOpacity:.8,color:inc.priority===1?'#e53e3e':inc.priority===2?'#f6ad55':'#3182ce'}).addTo(this.map); const puTitle = inc.priority===1 ? 'Noodoproep – details onbekend' : inc.title; m.bindPopup(`<strong>${puTitle}</strong><br>${inc.location}<br><em>Prioriteit ${inc.priority}</em>`); m.on('click',()=>{ this.map.setView(inc.coords,14,{animate:true}); m.openPopup(); }); this.mapMarkers.push(m); }); }
     }
 
-    // --- Initialize
     let game;
     function setActiveMenu(el,section){ document.querySelectorAll('.menu-item').forEach(i=>i.classList.remove('active')); el.classList.add('active'); if(section==='rov'){ if(!game) game=new ROVTrainingSystem(); game.start(); } else { document.getElementById('workspaceContent').innerHTML=`<div class="waiting-screen"><div style="font-size:3em">🛠️</div><p>"${section}" komt binnenkort…</p></div>`; } }
     function switchTab(el,tab){ document.querySelectorAll('.workspace-tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); if(!game) return; if(tab==='map'){ game.showMap(); } else if(tab==='conversation'){ if(game.currentIncident) game.displayIncident(); else game.showWaitingScreen(); } else if(tab==='resources'){ document.getElementById('workspaceContent').innerHTML='<div class="waiting-screen"><div style="font-size:3em">📋</div><p>Procedurekaarten & checklists volgen hier.</p></div>'; } }
